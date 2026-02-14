@@ -50,11 +50,8 @@ map({ "n", "v" }, "<leader>d", '"_d', { desc = "Delete to void register" })
 -- ウィンドウ操作
 -- ──────────────────────────────────────
 
--- ウィンドウ間移動
-map("n", "<C-h>", "<C-w>h", { desc = "Move to left window" })
-map("n", "<C-j>", "<C-w>j", { desc = "Move to below window" })
-map("n", "<C-k>", "<C-w>k", { desc = "Move to above window" })
-map("n", "<C-l>", "<C-w>l", { desc = "Move to right window" })
+-- ウィンドウ間移動 (vim-tmux-navigator が担当)
+-- tmux 未使用時もフォールバックで動作する
 
 -- ウィンドウサイズ調整
 map("n", "<C-Up>", "<cmd>resize +2<CR>", { desc = "Increase height" })

@@ -170,4 +170,42 @@ return {
     event = "VeryLazy",
     opts = {},
   },
+
+  -- ──────────────────────────────────────
+  -- todo-comments: TODO/FIXME/HACK をハイライト＋検索
+  -- ──────────────────────────────────────
+  {
+    "folke/todo-comments.nvim",
+    event = { "BufReadPost", "BufNewFile" },
+    dependencies = { "nvim-lua/plenary.nvim" },
+    keys = {
+      { "]t", function() require("todo-comments").jump_next() end, desc = "Next TODO" },
+      { "[t", function() require("todo-comments").jump_prev() end, desc = "Prev TODO" },
+      { "<leader>ft", "<cmd>TodoTelescope<CR>", desc = "Find TODOs" },
+    },
+    opts = {},
+  },
+
+  -- ──────────────────────────────────────
+  -- lazygit: Nvim 内から Git 操作
+  -- ──────────────────────────────────────
+  {
+    "kdheepak/lazygit.nvim",
+    cmd = "LazyGit",
+    keys = {
+      { "<leader>gg", "<cmd>LazyGit<CR>", desc = "LazyGit" },
+    },
+    dependencies = {
+      "nvim-lua/plenary.nvim",
+    },
+  },
+
+  -- ──────────────────────────────────────
+  -- vim-tmux-navigator: Nvim/tmux ペイン間をシームレス移動
+  -- C-h/j/k/l で Nvim ウィンドウも tmux ペインも区別なく移動
+  -- ──────────────────────────────────────
+  {
+    "christoomey/vim-tmux-navigator",
+    event = "VeryLazy",
+  },
 }

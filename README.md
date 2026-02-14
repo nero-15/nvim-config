@@ -1,63 +1,217 @@
-# dotfiles-nvim
+# nvim-config
 
-Neovim configuration for AI-driven development.
+Neovim設定ファイル。
 
-## Setup
+## セットアップ
 
 ```bash
 bash setup.sh
 ```
 
-Does three things:
-1. Backs up existing `~/.config/nvim` if present
-2. Symlinks this directory to `~/.config/nvim`
-3. Initializes git repo with initial commit
+これを実行すると以下が行われる:
 
-Then launch `nvim`. Plugins install automatically on first run.
+1. 既存の `~/.config/nvim` があればバックアップ
+2. このディレクトリを `~/.config/nvim` にシンボリックリンク
+3. シェルにエイリアス `v` を登録（`v` で nvim が起動できるようになる）
+4. 不足している依存ツールを brew で一括インストール（確認あり）
 
-## Structure
+その後 `nvim` を起動すれば、プラグインは初回起動時に自動インストールされる。
 
-```
-├── init.lua              # Entry point
-├── lua/
-│   ├── config/
-│   │   ├── options.lua   # Editor settings
-│   │   ├── keymaps.lua   # Key bindings
-│   │   └── autocmds.lua  # Auto commands
-│   └── plugins/
-│       ├── editor.lua    # neo-tree, telescope, flash, harpoon, surround
-│       ├── ui.lua        # tokyonight, lualine, gitsigns, indent guides
-│       ├── lsp.lua       # mason, lspconfig, nvim-cmp
-│       ├── treesitter.lua
-│       └── ai.lua        # claudecode.nvim, render-markdown
-├── setup.sh
-└── .gitignore
-```
+`:Mason` からフォーマッター・リンターを手動インストール:
+`stylua`, `prettier`, `php-cs-fixer`, `goimports`, `gofumpt`, `eslint_d`, `phpstan`, `golangci-lint`
 
-## Key Bindings
+## ファイル構成
 
-Leader: `Space`
+| ファイル | 役割 |
+|---------|------|
+| `init.lua` | エントリーポイント（最初に読み込まれる） |
+| `lua/config/options.lua` | エディタの基本設定 |
+| `lua/config/keymaps.lua` | キーバインド定義 |
+| `lua/config/autocmds.lua` | 自動コマンド |
+| `lua/plugins/editor.lua` | neo-tree, telescope, flash, harpoon, surround, lazygit, tmux-navigator, todo-comments |
+| `lua/plugins/ui.lua` | テーマ(tokyonight), ステータスバー(lualine), git表示, インデントガイド |
+| `lua/plugins/lsp.lua` | LSP設定(mason, lspconfig, nvim-cmp, snippets) |
+| `lua/plugins/treesitter.lua` | シンタックスハイライト, テキストオブジェクト |
+| `lua/plugins/formatting.lua` | 保存時の自動フォーマット（conform.nvim） |
+| `lua/plugins/linting.lua` | 保存時の静的解析（nvim-lint） |
+| `lua/plugins/ai.lua` | Claude Code連携, マークダウンレンダリング |
+| `aliases.sh` | シェルエイリアス定義（`v` → `nvim`） |
 
-| Key | Action |
-|-----|--------|
-| `<leader>e` | File explorer (neo-tree) |
-| `<leader>ff` | Find files |
-| `<leader>fg` | Live grep |
-| `<leader>1-4` | Harpoon file 1-4 |
-| `s` | Flash jump |
-| `<leader>ac` | Toggle Claude Code |
-| `<leader>as` | Send selection to Claude (visual mode) |
-| `<leader>w` | Save |
-| `gcc` | Toggle comment |
-| `gd` | Go to definition |
-| `K` | Hover docs |
+## キーバインド
 
-Full list: press `<leader>` and wait for which-key popup.
+Leaderキーは **スペース**。全キーバインドは `<Space>` を押して待てば which-key のポップアップでも確認できる。
 
-## Dependencies
+### 基本操作
 
-- Neovim >= 0.10
-- git, node, ripgrep, fd
-- Nerd Font (for icons)
-- Claude Code (for AI integration)
-- tmux (recommended)
+| キー | 機能 |
+|------|------|
+| `jk` | Insertモードを抜ける（Escの代わり） |
+| `<Esc>` | 検索ハイライトを消す |
+| `<Space>w` | 保存 |
+| `<Space>a` | 全選択 |
+| `<Space>cp` | カレントファイルのパスをコピー |
+
+### 移動
+
+| キー | 機能 |
+|------|------|
+| `C-d` / `C-u` | 半ページ移動（カーソル中央維持） |
+| `n` / `N` | 検索結果ジャンプ（カーソル中央維持） |
+| `s` | Flash（画面内の任意の場所にジャンプ） |
+| `S` | Flash Treesitter（構文単位でジャンプ） |
+| `]m` / `[m` | 次/前の関数にジャンプ |
+| `]]` / `[[` | 次/前のクラスにジャンプ |
+| `]t` / `[t` | 次/前のTODOコメントにジャンプ |
+| `]q` / `[q` | Quickfixリストの次/前 |
+
+### 編集
+
+| キー | モード | 機能 |
+|------|--------|------|
+| `J` / `K` | ビジュアル | 選択行を上下に移動 |
+| `J` | ノーマル | 行結合（カーソル位置維持） |
+| `<Space>p` | ビジュアル | ペースト（レジスタ上書きなし） |
+| `<Space>y` | ノーマル/ビジュアル | クリップボードにヤンク |
+| `<Space>d` | ノーマル/ビジュアル | voidレジスタに削除（レジスタ汚さない） |
+| `gcc` | ノーマル | コメントのON/OFF |
+| `gc` | ビジュアル | 選択範囲をコメントON/OFF |
+| `cs"'` | ノーマル | 囲み文字を変更（例: `"` → `'`） |
+| `ds"` | ノーマル | 囲み文字を削除 |
+| `ysiw"` | ノーマル | 単語を囲む |
+
+### テキストオブジェクト（構文単位の操作）
+
+| 操作例 | 機能 |
+|--------|------|
+| `daf` | 関数ごと削除 |
+| `yif` | 関数の中身をヤンク |
+| `vac` | クラス全体を選択 |
+| `vic` | クラスの中身を選択 |
+| `daa` | 引数ごと削除 |
+| `via` | 引数の中身を選択 |
+| `<Space>sn` | 引数を次と入れ替え |
+| `<Space>sp` | 引数を前と入れ替え |
+
+`a` = around（全体）、`i` = inner（中身）、`f` = function、`c` = class、`a` = argument
+
+### ファイル・バッファ
+
+| キー | 機能 |
+|------|------|
+| `<Space>e` | ファイルエクスプローラー（neo-tree） |
+| `<Space>ff` | ファイル検索 |
+| `<Space>fg` | テキスト全文検索（grep） |
+| `<Space>fb` | バッファ一覧 |
+| `<Space>fr` | 最近開いたファイル |
+| `<Space>fs` | カーソル下の単語でgrep |
+| `<Space>fd` | 診断（エラー/警告）一覧 |
+| `<Space>fh` | ヘルプ検索 |
+| `<Space>ft` | TODO/FIXME/HACK一覧 |
+| `S-h` / `S-l` | 前/次のバッファに移動 |
+| `<Space>bd` | バッファを閉じる |
+| `<Space>ha` | Harpoonに追加 |
+| `<Space>hh` | Harpoonメニュー |
+| `<Space>1~4` | Harpoonファイル1~4に移動 |
+| `<Space>u` | Undotree（変更履歴ツリー） |
+
+### ウィンドウ
+
+| キー | 機能 |
+|------|------|
+| `C-h/j/k/l` | ウィンドウ/tmuxペイン間の移動 |
+| `C-Up/Down` | ウィンドウの高さを調整 |
+| `C-Left/Right` | ウィンドウの幅を調整 |
+
+### LSP（コード操作）
+
+| キー | 機能 |
+|------|------|
+| `gd` | 定義元にジャンプ |
+| `gD` | 宣言にジャンプ |
+| `gr` | 参照一覧 |
+| `gi` | 実装にジャンプ |
+| `K` | ドキュメント表示（ホバー） |
+| `<Space>ca` | コードアクション |
+| `<Space>cr` | リネーム |
+| `<Space>cd` | 行の診断を表示 |
+| `<Space>cf` | バッファをフォーマット |
+| `]d` / `[d` | 次/前の診断（エラー/警告） |
+
+### Git
+
+| キー | 機能 |
+|------|------|
+| `<Space>gg` | LazyGit（Git操作UI） |
+| `<Space>ge` | Git変更ファイル一覧（neo-tree） |
+| `]h` / `[h` | 次/前のhunk（変更箇所）に移動 |
+| `<Space>gs` | hunkをステージ |
+| `<Space>gr` | hunkをリセット |
+| `<Space>gp` | hunkをプレビュー |
+| `<Space>gb` | 行のblame表示 |
+
+### AI
+
+| キー | 機能 |
+|------|------|
+| `<Space>ac` | Claude Codeの開閉 |
+| `<Space>ao` | Claude Codeを開く |
+| `<Space>as` | 選択範囲をClaude Codeに送信（ビジュアルモード） |
+
+## 自動フォーマット
+
+保存時に自動でフォーマットが走る（conform.nvim）。
+
+| 言語 | フォーマッター |
+|------|-------------|
+| Lua | stylua |
+| TS/JS/JSON/CSS/HTML/YAML/Markdown | prettier |
+| PHP | php-cs-fixer |
+| Go | goimports + gofumpt |
+
+## リンター
+
+保存時・読み込み時に静的解析が走る（nvim-lint）。
+
+| 言語 | リンター |
+|------|---------|
+| TS/JS | eslint_d |
+| PHP | phpstan |
+| Go | golangci-lint |
+
+## 自動コマンド
+
+| 動作 | 説明 |
+|------|------|
+| 外部変更の自動読み込み | Claude Codeなどがファイルを書き換えたとき自動反映 |
+| ヤンク時ハイライト | コピーした範囲が一瞬光る |
+| カーソル位置の復元 | ファイルを開くと前回の位置に戻る |
+| ターミナル自動Insert | ターミナルを開くとすぐ入力できる |
+| 末尾空白の自動削除 | 保存時にトリム |
+| Markdown折り返し | Markdownファイルは行を折り返して表示 |
+
+## 対応言語（LSP）
+
+| 言語 | LSPサーバー |
+|------|-----------|
+| Lua | lua_ls |
+| TypeScript/JavaScript | ts_ls |
+| Go | gopls |
+| PHP | intelephense |
+
+`:Mason` で他の言語のLSPも追加できる。
+
+## スニペット
+
+friendly-snippets による各言語のスニペットが補完候補に表示される。
+Insertモードで `Tab` でスニペット展開・次のプレースホルダーに移動。
+
+## 必要なもの
+
+- **Neovim 0.10以上**
+- **git, node, ripgrep, fd** （検索系ツール）
+- **lazygit** （Git TUI）
+- **Nerd Font** （アイコン表示用フォント）
+- **Claude Code** （AI連携）
+- **tmux** （推奨、必須ではない）
+
+`setup.sh` が不足ツールを検出し、brew での一括インストールを提案する。

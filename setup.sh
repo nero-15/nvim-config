@@ -28,43 +28,86 @@ echo "[link] $SCRIPT_DIR → $NVIM_CONFIG_DIR"
 ln -sf "$SCRIPT_DIR" "$NVIM_CONFIG_DIR"
 
 # ──────────────────────────────────────
-# 3. Git リポジトリ初期化
+# 3. シェルエイリアスの登録
 # ──────────────────────────────────────
-if [ ! -d "$SCRIPT_DIR/.git" ]; then
-  echo "[git] リポジトリを初期化"
-  cd "$SCRIPT_DIR"
-  git init
-  git add -A
-  git commit -m "initial: Neovim config"
-  echo ""
-  echo "[git] GitHub に push する場合:"
-  echo "  gh repo create dotfiles-nvim --private --source=. --push"
-  echo "  または:"
-  echo "  git remote add origin git@github.com:<YOUR_USER>/dotfiles-nvim.git"
-  echo "  git push -u origin main"
+ALIASES_SH="$SCRIPT_DIR/aliases.sh"
+SOURCE_LINE="source \"$ALIASES_SH\""
+
+# ログインシェルに応じたrcファイルを選択
+case "${SHELL:-}" in
+  */zsh)  RC_FILE="$HOME/.zshrc" ;;
+  */bash) RC_FILE="$HOME/.bashrc" ;;
+  *)      RC_FILE="$HOME/.zshrc" ;;
+esac
+
+if [ -f "$RC_FILE" ] && grep -qF "$ALIASES_SH" "$RC_FILE"; then
+  echo "[alias] $RC_FILE に登録済み (スキップ)"
+else
+  echo "" >> "$RC_FILE"
+  echo "# Neovim aliases (added by dotfiles-nvim setup)" >> "$RC_FILE"
+  echo "$SOURCE_LINE" >> "$RC_FILE"
+  echo "[alias] $RC_FILE に追記: $SOURCE_LINE"
 fi
 
 # ──────────────────────────────────────
-# 4. 依存ツールの確認
+# 4. 依存ツールの自動インストール
 # ──────────────────────────────────────
 echo ""
 echo "=== 依存ツール確認 ==="
 
+MISSING_BREW=()
+MISSING_MANUAL=()
+
 check_cmd() {
-  if command -v "$1" &>/dev/null; then
-    echo "  ✓ $1 $(command $1 --version 2>/dev/null | head -1)"
+  local cmd="$1"
+  local brew_pkg="$2"
+  local manual_hint="$3"
+
+  if command -v "$cmd" &>/dev/null; then
+    echo "  ✓ $cmd"
   else
-    echo "  ✗ $1 が見つかりません → $2"
+    echo "  ✗ $cmd が見つかりません"
+    if [ -n "$brew_pkg" ]; then
+      MISSING_BREW+=("$brew_pkg")
+    else
+      MISSING_MANUAL+=("$cmd: $manual_hint")
+    fi
   fi
 }
 
-check_cmd "nvim" "https://github.com/neovim/neovim/releases (v0.10+ 推奨)"
-check_cmd "git" "https://git-scm.com/"
-check_cmd "node" "https://nodejs.org/ (LSP に必要)"
-check_cmd "rg" "brew install ripgrep / apt install ripgrep (telescope の grep に必要)"
-check_cmd "fd" "brew install fd / apt install fd-find (telescope の file find を高速化)"
-check_cmd "tmux" "brew install tmux / apt install tmux"
-check_cmd "claude" "npm install -g @anthropic-ai/claude-code"
+check_cmd "nvim"    "neovim"    ""
+check_cmd "git"     "git"       ""
+check_cmd "node"    "node"      ""
+check_cmd "rg"      "ripgrep"   ""
+check_cmd "fd"      "fd"        ""
+check_cmd "tmux"    "tmux"      ""
+check_cmd "lazygit" "lazygit"   ""
+check_cmd "claude"  ""          "npm install -g @anthropic-ai/claude-code"
+
+# brew で一括インストール
+if [ ${#MISSING_BREW[@]} -gt 0 ] && command -v brew &>/dev/null; then
+  echo ""
+  echo "  未インストール: ${MISSING_BREW[*]}"
+  read -rp "  brew install で一括インストールしますか？ [y/N] " yn
+  if [[ "$yn" =~ ^[Yy]$ ]]; then
+    brew install "${MISSING_BREW[@]}"
+  fi
+elif [ ${#MISSING_BREW[@]} -gt 0 ]; then
+  echo ""
+  echo "  brew が見つかりません。以下を手動でインストールしてください:"
+  for pkg in "${MISSING_BREW[@]}"; do
+    echo "    - $pkg"
+  done
+fi
+
+# 手動インストールが必要なもの
+if [ ${#MISSING_MANUAL[@]} -gt 0 ]; then
+  echo ""
+  echo "  以下は手動インストールが必要です:"
+  for item in "${MISSING_MANUAL[@]}"; do
+    echo "    - $item"
+  done
+fi
 
 # ──────────────────────────────────────
 # 5. Nerd Font の確認

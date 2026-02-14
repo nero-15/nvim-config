@@ -22,9 +22,8 @@ return {
       ensure_installed = {
         "lua_ls",           -- Lua (Neovim 設定用)
         "ts_ls",            -- TypeScript/JavaScript
-        "pyright",          -- Python
-        -- "rust_analyzer",  -- Rust
-        -- "gopls",          -- Go
+        "gopls",            -- Go
+        "intelephense",     -- PHP
       },
       automatic_installation = true,
     },
@@ -89,12 +88,15 @@ return {
         capabilities = capabilities,
       })
 
-      -- Python
-      lspconfig.pyright.setup({
+      -- Go
+      lspconfig.gopls.setup({
         capabilities = capabilities,
       })
 
-      -- 他の言語はここに追加
+      -- PHP
+      lspconfig.intelephense.setup({
+        capabilities = capabilities,
+      })
     end,
   },
 
@@ -108,7 +110,13 @@ return {
       "hrsh7th/cmp-nvim-lsp",
       "hrsh7th/cmp-buffer",
       "hrsh7th/cmp-path",
-      "L3MON4D3/LuaSnip",
+      {
+        "L3MON4D3/LuaSnip",
+        dependencies = { "rafamadriz/friendly-snippets" },
+        config = function()
+          require("luasnip.loaders.from_vscode").lazy_load()
+        end,
+      },
       "saadparwaiz1/cmp_luasnip",
     },
     config = function()
