@@ -12,13 +12,23 @@ bash setup.sh
 
 1. 既存の `~/.config/nvim` があればバックアップ
 2. このディレクトリを `~/.config/nvim` にシンボリックリンク
-3. シェルにエイリアス `v` を登録（`v` で nvim が起動できるようになる）
+3. シェルにエイリアス・コマンドを登録（`v`, `ws`）
 4. 不足している依存ツールを brew で一括インストール（確認あり）
+5. Nerd Fontのインストール + Terminal.appのフォント変更（確認あり）
 
 その後 `nvim` を起動すれば、プラグインは初回起動時に自動インストールされる。
 
 `:Mason` からフォーマッター・リンターを手動インストール:
 `stylua`, `prettier`, `php-cs-fixer`, `goimports`, `gofumpt`, `eslint_d`, `phpstan`, `golangci-lint`
+
+## シェルコマンド
+
+| コマンド | 機能 |
+|---------|------|
+| `v` | `nvim` のエイリアス。`v .` でカレントディレクトリを開く |
+| `ws` | ワークスペースセレクター。fzfでプロジェクトを選び、新しいTerminal.appウィンドウでtmux+nvimを起動 |
+
+`ws` は `~/devel/` 直下のディレクトリを自動検出する。深い階層のプロジェクトは `aliases.sh` の `extra_projects` に直接登録。
 
 ## ファイル構成
 
@@ -35,7 +45,7 @@ bash setup.sh
 | `lua/plugins/formatting.lua` | 保存時の自動フォーマット（conform.nvim） |
 | `lua/plugins/linting.lua` | 保存時の静的解析（nvim-lint） |
 | `lua/plugins/ai.lua` | Claude Code連携, マークダウンレンダリング |
-| `aliases.sh` | シェルエイリアス定義（`v` → `nvim`） |
+| `aliases.sh` | シェルエイリアス・コマンド定義（`v`, `ws`） |
 
 ## キーバインド
 
@@ -118,7 +128,7 @@ Leaderキーは **スペース**。全キーバインドは `<Space>` を押し�
 
 | キー | 機能 |
 |------|------|
-| `C-h/j/k/l` | ウィンドウ/tmuxペイン間の移動 |
+| `C-h/j/k/l` | ウィンドウ/tmuxペイン間の移動（ターミナルモードでも有効） |
 | `C-Up/Down` | ウィンドウの高さを調整 |
 | `C-Left/Right` | ウィンドウの幅を調整 |
 
@@ -153,7 +163,7 @@ Leaderキーは **スペース**。全キーバインドは `<Space>` を押し�
 
 | キー | 機能 |
 |------|------|
-| `<Space>ac` | Claude Codeの開閉 |
+| `<Space>ac` | Claude Codeの開閉（`--dangerously-skip-permissions` で起動） |
 | `<Space>ao` | Claude Codeを開く |
 | `<Space>as` | 選択範囲をClaude Codeに送信（ビジュアルモード） |
 
@@ -182,7 +192,7 @@ Leaderキーは **スペース**。全キーバインドは `<Space>` を押し�
 
 | 動作 | 説明 |
 |------|------|
-| 外部変更の自動読み込み | Claude Codeなどがファイルを書き換えたとき自動反映 |
+| ファイル変更の自動反映 | 1秒ごとにチェック。Claude Codeの変更がリアルタイムでエディタに反映される |
 | ヤンク時ハイライト | コピーした範囲が一瞬光る |
 | カーソル位置の復元 | ファイルを開くと前回の位置に戻る |
 | ターミナル自動Insert | ターミナルを開くとすぐ入力できる |
@@ -207,10 +217,10 @@ Insertモードで `Tab` でスニペット展開・次のプレースホルダ�
 
 ## 必要なもの
 
-- **Neovim 0.10以上**
+- **Neovim 0.11以上**
 - **git, node, ripgrep, fd** （検索系ツール）
 - **lazygit** （Git TUI）
-- **Nerd Font** （アイコン表示用フォント）
+- **fzf** （wsコマンドのプロジェクト選択に使用）
 - **Claude Code** （AI連携）
 - **tmux** （推奨、必須ではない）
 
