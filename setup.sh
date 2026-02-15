@@ -81,8 +81,9 @@ check_cmd "node"    "node"      ""
 check_cmd "rg"      "ripgrep"   ""
 check_cmd "fd"      "fd"        ""
 check_cmd "tmux"    "tmux"      ""
-check_cmd "fzf"     "fzf"       ""
-check_cmd "claude"  ""          "npm install -g @anthropic-ai/claude-code"
+check_cmd "fzf"           "fzf"             ""
+check_cmd "tree-sitter"   "tree-sitter-cli" ""
+check_cmd "claude"        ""                "npm install -g @anthropic-ai/claude-code"
 
 # brew で一括インストール
 if [ ${#MISSING_BREW[@]} -gt 0 ] && command -v brew &>/dev/null; then
@@ -146,13 +147,30 @@ APPLESCRIPT
 fi
 
 # ──────────────────────────────────────
+# 6. プラグイン・パーサーの自動インストール
+# ──────────────────────────────────────
+echo ""
+echo "=== プラグイン・パーサーのインストール ==="
+
+if command -v nvim &>/dev/null; then
+  read -rp "  nvim のプラグインと treesitter パーサーをインストールしますか？ [y/N] " yn
+  if [[ "$yn" =~ ^[Yy]$ ]]; then
+    echo "  [plugin] lazy.nvim プラグインをインストール中..."
+    nvim --headless "+Lazy! sync" +qa 2>/dev/null
+    echo "  [treesitter] パーサーをインストール中..."
+    nvim --headless "+TSInstall! lua typescript tsx javascript go php json yaml toml html css scss bash markdown markdown_inline vim vimdoc gitcommit diff" "+sleep 30" +qa 2>/dev/null
+    echo "  [done] インストール完了"
+  fi
+fi
+
+# ──────────────────────────────────────
 # 完了
 # ──────────────────────────────────────
 echo ""
 echo "=== セットアップ完了 ==="
 echo ""
 echo "次のステップ:"
-echo "  1. nvim を起動 (初回は lazy.nvim がプラグインを自動インストール)"
+echo "  1. nvim を起動"
 echo "  2. :Mason で LSP サーバーの状態を確認"
 echo "  3. :checkhealth で環境の診断"
 echo ""
