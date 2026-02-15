@@ -1,6 +1,7 @@
 -- ==========================================================
 -- LSP: Language Server Protocol
 -- コードジャンプ、補完、診断
+-- Neovim 0.11+ の vim.lsp.config API を使用
 -- ==========================================================
 
 return {
@@ -17,8 +18,6 @@ return {
     "williamboman/mason-lspconfig.nvim",
     dependencies = { "williamboman/mason.nvim" },
     opts = {
-      -- 使う言語に合わせて追加する
-      -- :Mason で対話的にインストールもできる
       ensure_installed = {
         "lua_ls",           -- Lua (Neovim 設定用)
         "ts_ls",            -- TypeScript/JavaScript
@@ -30,7 +29,7 @@ return {
   },
 
   -- ──────────────────────────────────────
-  -- nvim-lspconfig: LSP の設定
+  -- LSP の設定 (vim.lsp.config)
   -- ──────────────────────────────────────
   {
     "neovim/nvim-lspconfig",
@@ -40,10 +39,8 @@ return {
       "williamboman/mason-lspconfig.nvim",
     },
     config = function()
-      local lspconfig = require("lspconfig")
-      local capabilities = vim.lsp.protocol.make_client_capabilities()
-
       -- nvim-cmp との連携 (補完候補の強化)
+      local capabilities = vim.lsp.protocol.make_client_capabilities()
       local ok, cmp_lsp = pcall(require, "cmp_nvim_lsp")
       if ok then
         capabilities = cmp_lsp.default_capabilities(capabilities)
@@ -69,9 +66,13 @@ return {
         end,
       })
 
-      -- Lua (Neovim 設定ファイル用)
-      lspconfig.lua_ls.setup({
+      -- 全サーバー共通の capabilities
+      vim.lsp.config("*", {
         capabilities = capabilities,
+      })
+
+      -- Lua (Neovim 設定ファイル用)
+      vim.lsp.config("lua_ls", {
         settings = {
           Lua = {
             runtime = { version = "LuaJIT" },
@@ -83,20 +84,8 @@ return {
         },
       })
 
-      -- TypeScript
-      lspconfig.ts_ls.setup({
-        capabilities = capabilities,
-      })
-
-      -- Go
-      lspconfig.gopls.setup({
-        capabilities = capabilities,
-      })
-
-      -- PHP
-      lspconfig.intelephense.setup({
-        capabilities = capabilities,
-      })
+      -- 各サーバーを有効化
+      vim.lsp.enable({ "lua_ls", "ts_ls", "gopls", "intelephense" })
     end,
   },
 
