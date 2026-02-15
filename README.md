@@ -17,6 +17,7 @@ bash setup.sh
 5. Nerd Fontのインストール + Terminal.appのフォント変更（確認あり）
 
 その後 `nvim` を起動すれば、プラグインは初回起動時に自動インストールされる。
+（setup.sh 内でプラグイン・treesitter パーサーの一括インストールも可能）
 
 `:Mason` からフォーマッター・リンターを手動インストール:
 `stylua`, `prettier`, `php-cs-fixer`, `goimports`, `gofumpt`, `eslint_d`, `phpstan`, `golangci-lint`
@@ -168,7 +169,7 @@ Leaderキーは **スペース**。全キーバインドは `<Space>` を押し�
 
 ## リンター
 
-保存時・読み込み時に静的解析が走る（nvim-lint）。
+保存時・読み込み時に静的解析が走る（nvim-lint）。リンターが未インストールの場合は自動スキップ。
 
 | 言語 | リンター |
 |------|---------|
@@ -219,6 +220,7 @@ Insertモードで `Tab` でスニペット展開・次のプレースホルダ�
 
 - **Neovim 0.11以上**
 - **git, node, ripgrep, fd** （検索系ツール）
+- **tree-sitter-cli** （treesitter パーサーのコンパイルに必要）
 - **fzf** （wsコマンドのプロジェクト選択に使用）
 - **Claude Code** （AI連携）
 - **tmux** （推奨、必須ではない）
