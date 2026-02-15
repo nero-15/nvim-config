@@ -82,6 +82,7 @@ check_cmd "rg"      "ripgrep"   ""
 check_cmd "fd"      "fd"        ""
 check_cmd "tmux"    "tmux"      ""
 check_cmd "lazygit" "lazygit"   ""
+check_cmd "fzf"     "fzf"       ""
 check_cmd "claude"  ""          "npm install -g @anthropic-ai/claude-code"
 
 # brew で一括インストール
