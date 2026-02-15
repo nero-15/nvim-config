@@ -33,20 +33,25 @@ bash setup.sh
 
 ## ファイル構成
 
-| ファイル | 役割 |
-|---------|------|
-| `init.lua` | エントリーポイント（最初に読み込まれる） |
-| `lua/config/options.lua` | エディタの基本設定 |
-| `lua/config/keymaps.lua` | キーバインド定義 |
-| `lua/config/autocmds.lua` | 自動コマンド |
-| `lua/plugins/editor.lua` | neo-tree, telescope, flash, harpoon, surround, autotag, tmux-navigator, todo-comments |
-| `lua/plugins/ui.lua` | テーマ(tokyonight), ステータスバー(lualine), インデントガイド |
-| `lua/plugins/lsp.lua` | LSP設定(mason, lspconfig, nvim-cmp, snippets) |
-| `lua/plugins/treesitter.lua` | シンタックスハイライト, テキストオブジェクト |
-| `lua/plugins/formatting.lua` | 保存時の自動フォーマット（conform.nvim） |
-| `lua/plugins/linting.lua` | 保存時の静的解析（nvim-lint） |
-| `lua/plugins/ai.lua` | Claude Code連携, マークダウンレンダリング |
-| `aliases.sh` | シェルエイリアス・コマンド定義（`v`, `ws`） |
+```
+.
+├── init.lua                      # エントリーポイント（最初に読み込まれる）
+├── setup.sh                      # セットアップスクリプト
+├── aliases.sh                    # シェルエイリアス・コマンド定義（v, ws）
+└── lua/
+    ├── config/
+    │   ├── options.lua            # エディタの基本設定
+    │   ├── keymaps.lua            # キーバインド定義
+    │   └── autocmds.lua           # 自動コマンド
+    └── plugins/
+        ├── editor.lua             # neo-tree, telescope, flash, harpoon, surround, autotag, tmux-navigator, todo-comments
+        ├── ui.lua                 # テーマ(tokyonight), ステータスバー(lualine), インデントガイド
+        ├── lsp.lua                # LSP設定(mason, lspconfig, nvim-cmp, snippets)
+        ├── treesitter.lua         # シンタックスハイライト, テキストオブジェクト
+        ├── formatting.lua         # 保存時の自動フォーマット（conform.nvim）
+        ├── linting.lua            # 保存時の静的解析（nvim-lint）
+        └── ai.lua                 # Claude Code連携, マークダウンレンダリング
+```
 
 ## キーバインド
 
