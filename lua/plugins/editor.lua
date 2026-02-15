@@ -19,6 +19,27 @@ return {
       { "<leader>ge", "<cmd>Neotree git_status<CR>", desc = "Git Explorer" },
     },
     opts = {
+      default_component_configs = {
+        icon = {
+          folder_closed = "▸",
+          folder_open = "▾",
+          folder_empty = "▹",
+          default = "·",
+        },
+        git_status = {
+          symbols = {
+            added     = "+",
+            modified  = "~",
+            deleted   = "-",
+            renamed   = "→",
+            untracked = "?",
+            ignored   = "·",
+            unstaged  = "○",
+            staged    = "●",
+            conflict  = "!",
+          },
+        },
+      },
       filesystem = {
         follow_current_file = { enabled = true },
         use_libuv_file_watcher = true,  -- ファイル変更を自動検知
