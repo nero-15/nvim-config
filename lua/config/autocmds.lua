@@ -7,10 +7,18 @@ local autocmd = vim.api.nvim_create_autocmd
 
 -- ファイル外部変更の自動読み込み (Claude Code がファイルを書き換えたとき用)
 augroup("AutoReload", { clear = true })
-autocmd({ "FocusGained", "BufEnter", "CursorHold" }, {
+autocmd({ "FocusGained", "BufEnter", "CursorHold", "TermLeave" }, {
   group = "AutoReload",
   command = "checktime",
 })
+
+-- 1秒ごとにファイル変更をチェック (Claude Code のリアルタイム反映用)
+local timer = vim.uv.new_timer()
+timer:start(1000, 1000, vim.schedule_wrap(function()
+  if vim.fn.getcmdwintype() == "" then
+    vim.cmd("checktime")
+  end
+end))
 
 -- ヤンク時にハイライト表示
 augroup("YankHighlight", { clear = true })
