@@ -17,6 +17,7 @@ ws() {
 
   # 階層が深いプロジェクトは直接登録
   local extra_projects=(
+    "$HOME/devel"
     "$HOME/devel/spbl/repositories/spbl-ai"
     "$HOME/devel/spbl/repositories/spbl-api"
     "$HOME/devel/spbl/repositories/spbl-infra"
@@ -33,7 +34,7 @@ ws() {
 
   osascript -e "
     tell application \"Terminal\"
-      do script \"cd '$selected' && tmux new-session -s '$session_name' \\\\; send-keys 'v .' Enter\"
+      do script \"cd '$selected' && (tmux attach-session -t '$session_name' 2>/dev/null || tmux new-session -s '$session_name' \\\\; send-keys 'v .' Enter)\"
       activate
     end tell
   "
