@@ -38,8 +38,8 @@ bash setup.sh
 | `lua/config/options.lua` | エディタの基本設定 |
 | `lua/config/keymaps.lua` | キーバインド定義 |
 | `lua/config/autocmds.lua` | 自動コマンド |
-| `lua/plugins/editor.lua` | neo-tree, telescope, flash, harpoon, surround, lazygit, tmux-navigator, todo-comments |
-| `lua/plugins/ui.lua` | テーマ(tokyonight), ステータスバー(lualine), git表示, インデントガイド |
+| `lua/plugins/editor.lua` | neo-tree, telescope, flash, harpoon, surround, autotag, tmux-navigator, todo-comments |
+| `lua/plugins/ui.lua` | テーマ(tokyonight), ステータスバー(lualine), インデントガイド |
 | `lua/plugins/lsp.lua` | LSP設定(mason, lspconfig, nvim-cmp, snippets) |
 | `lua/plugins/treesitter.lua` | シンタックスハイライト, テキストオブジェクト |
 | `lua/plugins/formatting.lua` | 保存時の自動フォーマット（conform.nvim） |
@@ -147,18 +147,6 @@ Leaderキーは **スペース**。全キーバインドは `<Space>` を押し�
 | `<Space>cf` | バッファをフォーマット |
 | `]d` / `[d` | 次/前の診断（エラー/警告） |
 
-### Git
-
-| キー | 機能 |
-|------|------|
-| `<Space>gg` | LazyGit（Git操作UI） |
-| `<Space>ge` | Git変更ファイル一覧（neo-tree） |
-| `]h` / `[h` | 次/前のhunk（変更箇所）に移動 |
-| `<Space>gs` | hunkをステージ |
-| `<Space>gr` | hunkをリセット |
-| `<Space>gp` | hunkをプレビュー |
-| `<Space>gb` | 行のblame表示 |
-
 ### AI
 
 | キー | 機能 |
@@ -174,7 +162,7 @@ Leaderキーは **スペース**。全キーバインドは `<Space>` を押し�
 | 言語 | フォーマッター |
 |------|-------------|
 | Lua | stylua |
-| TS/JS/JSON/CSS/HTML/YAML/Markdown | prettier |
+| TS/JS/JSON/CSS/SCSS/HTML/YAML/Markdown | prettier |
 | PHP | php-cs-fixer |
 | Go | goimports + gofumpt |
 
@@ -204,11 +192,23 @@ Leaderキーは **スペース**。全キーバインドは `<Space>` を押し�
 | 言語 | LSPサーバー |
 |------|-----------|
 | Lua | lua_ls |
-| TypeScript/JavaScript | ts_ls |
+| TypeScript/JavaScript/React | ts_ls |
+| HTML | html |
+| CSS/SCSS | cssls |
+| Emmet (HTML/JSX展開) | emmet_language_server |
 | Go | gopls |
 | PHP | intelephense |
 
 `:Mason` で他の言語のLSPも追加できる。
+
+## React / Next.js サポート
+
+- **ts_ls**: TSX/JSX の型チェック・補完・定義ジャンプ
+- **emmet_language_server**: `div.container>ul>li*3` のような省略記法をJSX内でも展開
+- **nvim-ts-autotag**: HTML/JSXタグの自動閉じ・ペアリネーム
+- **treesitter**: TSX/JSX/HTML/CSS/SCSS のシンタックスハイライト
+- **eslint_d**: JSX/TSX のリント
+- **prettier**: JSX/TSX/CSS/SCSS のフォーマット
 
 ## スニペット
 
@@ -219,7 +219,6 @@ Insertモードで `Tab` でスニペット展開・次のプレースホルダ�
 
 - **Neovim 0.11以上**
 - **git, node, ripgrep, fd** （検索系ツール）
-- **lazygit** （Git TUI）
 - **fzf** （wsコマンドのプロジェクト選択に使用）
 - **Claude Code** （AI連携）
 - **tmux** （推奨、必須ではない）

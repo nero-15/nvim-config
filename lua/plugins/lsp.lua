@@ -19,10 +19,13 @@ return {
     dependencies = { "williamboman/mason.nvim" },
     opts = {
       ensure_installed = {
-        "lua_ls",           -- Lua (Neovim 設定用)
-        "ts_ls",            -- TypeScript/JavaScript
-        "gopls",            -- Go
-        "intelephense",     -- PHP
+        "lua_ls",                -- Lua (Neovim 設定用)
+        "ts_ls",                 -- TypeScript/JavaScript
+        "gopls",                 -- Go
+        "intelephense",          -- PHP
+        "cssls",                 -- CSS/SCSS/LESS
+        "html",                  -- HTML
+        "emmet_language_server", -- Emmet (HTML/JSX 展開)
       },
       automatic_installation = true,
     },
@@ -84,8 +87,20 @@ return {
         },
       })
 
+      -- Emmet (HTML/JSX/CSS の省略記法展開)
+      vim.lsp.config("emmet_language_server", {
+        filetypes = {
+          "html", "css", "scss",
+          "javascript", "javascriptreact",
+          "typescriptreact",
+        },
+      })
+
       -- 各サーバーを有効化
-      vim.lsp.enable({ "lua_ls", "ts_ls", "gopls", "intelephense" })
+      vim.lsp.enable({
+        "lua_ls", "ts_ls", "gopls", "intelephense",
+        "cssls", "html", "emmet_language_server",
+      })
     end,
   },
 

@@ -25,6 +25,7 @@ return {
           "toml",
           "html",
           "css",
+          "scss",
           "bash",
           "markdown",
           "markdown_inline",

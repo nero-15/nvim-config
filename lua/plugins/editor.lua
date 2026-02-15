@@ -15,7 +15,6 @@ return {
     },
     keys = {
       { "<leader>e", "<cmd>Neotree toggle<CR>", desc = "File Explorer" },
-      { "<leader>ge", "<cmd>Neotree git_status<CR>", desc = "Git Explorer" },
     },
     opts = {
       default_component_configs = {
@@ -147,7 +146,6 @@ return {
     opts = {
       spec = {
         { "<leader>f", group = "Find" },
-        { "<leader>g", group = "Git" },
         { "<leader>h", group = "Harpoon" },
         { "<leader>b", group = "Buffer" },
         { "<leader>a", group = "AI" },
@@ -206,17 +204,12 @@ return {
   },
 
   -- ──────────────────────────────────────
-  -- lazygit: Nvim 内から Git 操作
+  -- nvim-ts-autotag: HTML/JSX タグの自動閉じ・リネーム
   -- ──────────────────────────────────────
   {
-    "kdheepak/lazygit.nvim",
-    cmd = "LazyGit",
-    keys = {
-      { "<leader>gg", "<cmd>LazyGit<CR>", desc = "LazyGit" },
-    },
-    dependencies = {
-      "nvim-lua/plenary.nvim",
-    },
+    "windwp/nvim-ts-autotag",
+    event = { "BufReadPost", "BufNewFile" },
+    opts = {},
   },
 
   -- ──────────────────────────────────────
