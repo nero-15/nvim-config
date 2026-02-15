@@ -9,17 +9,14 @@ ws() {
     return 1
   fi
 
-  local projects=(
-    "$HOME/devel/nvim-config"
-    "$HOME/devel/Dawn-Editor"
-    "$HOME/devel/anyteam-app"
-    "$HOME/devel/anyteam"
-    "$HOME/devel/charging-agentic-bulls"
-    "$HOME/devel/kyushinkai-admin"
-    "$HOME/devel/kyushinkai-api"
-    "$HOME/devel/nero15.dev"
-    "$HOME/devel/spbl"
-    "$HOME/devel/spbl-app"
+  # ~/devel 直下のディレクトリを自動検出
+  local auto_projects=()
+  for d in "$HOME"/devel/*/; do
+    [ -d "$d" ] && auto_projects+=("${d%/}")
+  done
+
+  # 階層が深いプロジェクトは直接登録
+  local extra_projects=(
     "$HOME/devel/spbl/repositories/spbl-ai"
     "$HOME/devel/spbl/repositories/spbl-api"
     "$HOME/devel/spbl/repositories/spbl-infra"
@@ -27,7 +24,7 @@ ws() {
   )
 
   local selected
-  selected=$(printf '%s\n' "${projects[@]}" | fzf --height=40% --reverse --prompt="workspace > " --with-nth=-1 --delimiter=/)
+  selected=$(printf '%s\n' "${auto_projects[@]}" "${extra_projects[@]}" | sort -u | fzf --height=40% --reverse --prompt="workspace > " --with-nth=-1 --delimiter=/)
 
   [ -z "$selected" ] && return
 
