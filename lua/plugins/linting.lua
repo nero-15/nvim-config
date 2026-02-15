@@ -18,11 +18,17 @@ return {
         go = { "golangcilint" },
       }
 
-      -- 保存時・読み込み時にリント実行
+      -- 保存時・読み込み時にリント実行 (リンターが存在する場合のみ)
       vim.api.nvim_create_autocmd({ "BufWritePost", "BufReadPost", "InsertLeave" }, {
         group = vim.api.nvim_create_augroup("Linting", { clear = true }),
         callback = function()
-          lint.try_lint()
+          local linters = lint.linters_by_ft[vim.bo.filetype] or {}
+          local available = vim.tbl_filter(function(name)
+            return vim.fn.executable(name) == 1
+          end, linters)
+          if #available > 0 then
+            lint.try_lint(available)
+          end
         end,
       })
     end,
