@@ -131,9 +131,18 @@ else
   fi
 fi
 
-if [ "$NERD_FONT_INSTALLED" = true ]; then
-  echo "  ※ ターミナルのフォント設定を Nerd Font に変更してください"
-  echo "    Terminal.app: 設定 → プロファイル → テキスト → フォント → Hack Nerd Font Mono"
+if [ "$NERD_FONT_INSTALLED" = true ] && [[ "$TERM_PROGRAM" == "Apple_Terminal" ]]; then
+  read -rp "  Terminal.app のフォントを Hack Nerd Font Mono に変更しますか？ [y/N] " yn
+  if [[ "$yn" =~ ^[Yy]$ ]]; then
+    osascript <<'APPLESCRIPT'
+tell application "Terminal"
+  set targetProfile to name of default settings
+  set font name of settings set targetProfile to "HackNerdFontMono-Regular"
+  set font size of settings set targetProfile to 14
+end tell
+APPLESCRIPT
+    echo "  [font] Terminal.app のフォントを変更しました"
+  fi
 fi
 
 # ──────────────────────────────────────
