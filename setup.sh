@@ -110,14 +110,31 @@ if [ ${#MISSING_MANUAL[@]} -gt 0 ]; then
 fi
 
 # ──────────────────────────────────────
-# 5. Nerd Font の確認
+# 5. Nerd Font のインストール
 # ──────────────────────────────────────
 echo ""
 echo "=== Nerd Font ==="
-echo "  アイコン表示に Nerd Font が必要です"
-echo "  未インストールなら: https://www.nerdfonts.com/"
-echo "  おすすめ: JetBrainsMono Nerd Font / Hack Nerd Font"
-echo "  ターミナルのフォント設定を Nerd Font に変更してください"
+NERD_FONT_INSTALLED=false
+if fc-list 2>/dev/null | grep -qi "Nerd" || system_profiler SPFontsDataType 2>/dev/null | grep -qi "Nerd"; then
+  echo "  ✓ Nerd Font インストール済み"
+  NERD_FONT_INSTALLED=true
+else
+  echo "  ✗ Nerd Font が見つかりません（アイコン表示に必要）"
+  if command -v brew &>/dev/null; then
+    read -rp "  Hack Nerd Font をインストールしますか？ [y/N] " yn
+    if [[ "$yn" =~ ^[Yy]$ ]]; then
+      brew install --cask font-hack-nerd-font
+      NERD_FONT_INSTALLED=true
+    fi
+  else
+    echo "  手動インストール: https://www.nerdfonts.com/"
+  fi
+fi
+
+if [ "$NERD_FONT_INSTALLED" = true ]; then
+  echo "  ※ ターミナルのフォント設定を Nerd Font に変更してください"
+  echo "    Terminal.app: 設定 → プロファイル → テキスト → フォント → Hack Nerd Font Mono"
+fi
 
 # ──────────────────────────────────────
 # 完了
