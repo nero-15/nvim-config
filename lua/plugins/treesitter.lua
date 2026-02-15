@@ -37,6 +37,11 @@ return {
         auto_install = true,
       })
 
+      -- filetype → treesitter 言語のマッピング
+      vim.treesitter.language.register("tsx", "typescriptreact")
+      vim.treesitter.language.register("javascript", "javascriptreact")
+      vim.treesitter.language.register("bash", "sh")
+
       -- Neovim 0.11+: treesitter ハイライトを全バッファで有効化
       vim.api.nvim_create_autocmd("FileType", {
         group = vim.api.nvim_create_augroup("TreesitterHighlight", { clear = true }),
