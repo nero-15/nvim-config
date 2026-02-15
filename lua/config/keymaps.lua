@@ -53,6 +53,12 @@ map({ "n", "v" }, "<leader>d", '"_d', { desc = "Delete to void register" })
 -- ウィンドウ間移動 (vim-tmux-navigator が担当)
 -- tmux 未使用時もフォールバックで動作する
 
+-- ターミナルモードからもペイン移動できるようにする (Claude Code用)
+map("t", "<C-h>", "<C-\\><C-n><C-w>h", { desc = "Move to left window" })
+map("t", "<C-j>", "<C-\\><C-n><C-w>j", { desc = "Move to below window" })
+map("t", "<C-k>", "<C-\\><C-n><C-w>k", { desc = "Move to above window" })
+map("t", "<C-l>", "<C-\\><C-n><C-w>l", { desc = "Move to right window" })
+
 -- ウィンドウサイズ調整
 map("n", "<C-Up>", "<cmd>resize +2<CR>", { desc = "Increase height" })
 map("n", "<C-Down>", "<cmd>resize -2<CR>", { desc = "Decrease height" })
