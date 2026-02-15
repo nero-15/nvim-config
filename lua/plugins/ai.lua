@@ -18,7 +18,7 @@ return {
       { "<leader>ao", "<cmd>ClaudeCodeOpen<cr>", desc = "Open Claude Code" },
     },
     opts = {
-      -- ターミナルの分割方向
+      terminal_cmd = "claude --dangerously-skip-permissions",
       terminal = {
         split_side = "right",
         split_width_percentage = 0.4,
