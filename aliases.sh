@@ -1,6 +1,13 @@
 # Neovim aliases (managed by dotfiles-nvim)
 alias v="nvim"
 
+# tmux ステータスバー色割り当て（プロジェクト名のハッシュから決定論的に選択）
+_ws_color() {
+  local colors=("#1e3a5f" "#1e4a2e" "#3a1e5f" "#1e4a4a" "#4a1e2e" "#4a3a1e" "#2e3a4a" "#4a1e4a")
+  local hash=$(echo -n "$1" | cksum | awk '{print $1}')
+  echo "${colors[$((hash % 8 + 1))]}"
+}
+
 # ワークスペースセレクター
 # ws → fzf でプロジェクト選択 → 新しい Terminal.app ウィンドウで tmux + nvim 起動
 ws() {
@@ -31,10 +38,12 @@ ws() {
 
   local session_name
   session_name=$(basename "$selected")
+  local color
+  color=$(_ws_color "$session_name")
 
   osascript -e "
     tell application \"Terminal\"
-      do script \"cd '$selected' && (tmux attach-session -t '$session_name' 2>/dev/null || tmux new-session -s '$session_name' \\\\; send-keys 'v .' Enter)\"
+      do script \"cd '$selected' && if tmux has-session -t '$session_name' 2>/dev/null; then tmux set-option -t '$session_name' status-style 'bg=$color,fg=#c0caf5'; tmux attach-session -t '$session_name'; else tmux new-session -d -s '$session_name'; tmux set-option -t '$session_name' status-style 'bg=$color,fg=#c0caf5'; tmux send-keys -t '$session_name' 'v .' Enter; tmux attach-session -t '$session_name'; fi\"
       activate
     end tell
   "
