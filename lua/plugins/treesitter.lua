@@ -36,6 +36,14 @@ return {
         },
         auto_install = true,
       })
+
+      -- Neovim 0.11+: treesitter ハイライトを全バッファで有効化
+      vim.api.nvim_create_autocmd("FileType", {
+        group = vim.api.nvim_create_augroup("TreesitterHighlight", { clear = true }),
+        callback = function(args)
+          pcall(vim.treesitter.start, args.buf)
+        end,
+      })
     end,
   },
 
