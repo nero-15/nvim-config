@@ -14,6 +14,9 @@ map("i", "jk", "<Esc>", { desc = "Exit insert mode" })
 -- 検索ハイライトを消す
 map("n", "<Esc>", "<cmd>nohlsearch<CR>", { desc = "Clear search highlight" })
 
+-- ターミナルモードから Esc 2回で離脱 (Claude Code 用)
+map("t", "<Esc><Esc>", "<C-\\><C-n>", { desc = "Exit terminal mode" })
+
 -- ──────────────────────────────────────
 -- 移動の高速化
 -- ──────────────────────────────────────
