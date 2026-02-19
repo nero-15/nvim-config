@@ -53,7 +53,7 @@ ws() {
 
   osascript -e "
     tell application \"Terminal\"
-      do script \"cd '$selected' && if tmux has-session -t '=$session_name' 2>/dev/null; then $tmux_style; tmux attach-session -t '=$session_name'; else tmux new-session -d -s '$session_name'; $tmux_style; tmux send-keys -t '=$session_name' 'v .' Enter; tmux attach-session -t '=$session_name'; fi\"
+      do script \"cd '$selected' && if tmux has-session -t '=$session_name' 2>/dev/null; then $tmux_style; tmux attach-session -t '=$session_name'; else tmux new-session -d -s '$session_name'; $tmux_style; tmux send-keys -t '$session_name' 'v .' Enter; tmux attach-session -t '=$session_name'; fi\"
       activate
     end tell
   "
