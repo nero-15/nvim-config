@@ -28,7 +28,28 @@ echo "[link] $SCRIPT_DIR → $NVIM_CONFIG_DIR"
 ln -sf "$SCRIPT_DIR" "$NVIM_CONFIG_DIR"
 
 # ──────────────────────────────────────
-# 3. シェルエイリアスの登録
+# 3. tmux 設定のシンボリックリンク
+# ──────────────────────────────────────
+TMUX_CONF="$SCRIPT_DIR/tmux.conf"
+TMUX_DEST="$HOME/.tmux.conf"
+
+if [ -f "$TMUX_DEST" ] || [ -L "$TMUX_DEST" ]; then
+  if [ "$(readlink "$TMUX_DEST" 2>/dev/null)" = "$TMUX_CONF" ]; then
+    echo "[tmux] $TMUX_DEST はリンク済み (スキップ)"
+  else
+    TMUX_BACKUP="${TMUX_DEST}.backup.$(date +%Y%m%d_%H%M%S)"
+    echo "[tmux] 既存の $TMUX_DEST を $TMUX_BACKUP にバックアップ"
+    mv "$TMUX_DEST" "$TMUX_BACKUP"
+    ln -sf "$TMUX_CONF" "$TMUX_DEST"
+    echo "[tmux] $TMUX_CONF → $TMUX_DEST"
+  fi
+else
+  ln -sf "$TMUX_CONF" "$TMUX_DEST"
+  echo "[tmux] $TMUX_CONF → $TMUX_DEST"
+fi
+
+# ──────────────────────────────────────
+# 4. シェルエイリアスの登録
 # ──────────────────────────────────────
 ALIASES_SH="$SCRIPT_DIR/aliases.sh"
 SOURCE_LINE="source \"$ALIASES_SH\""
@@ -50,7 +71,7 @@ else
 fi
 
 # ──────────────────────────────────────
-# 4. 依存ツールの自動インストール
+# 5. 依存ツールの自動インストール
 # ──────────────────────────────────────
 echo ""
 echo "=== 依存ツール確認 ==="
@@ -111,7 +132,7 @@ if [ ${#MISSING_MANUAL[@]} -gt 0 ]; then
 fi
 
 # ──────────────────────────────────────
-# 5. Nerd Font のインストール
+# 6. Nerd Font のインストール
 # ──────────────────────────────────────
 echo ""
 echo "=== Nerd Font ==="
@@ -147,7 +168,7 @@ APPLESCRIPT
 fi
 
 # ──────────────────────────────────────
-# 6. プラグイン・パーサーの自動インストール
+# 7. プラグイン・パーサーの自動インストール
 # ──────────────────────────────────────
 echo ""
 echo "=== プラグイン・パーサーのインストール ==="
