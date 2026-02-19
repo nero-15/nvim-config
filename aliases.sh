@@ -44,9 +44,15 @@ ws() {
   local color
   color=$(_ws_color "$session_name")
 
+  # tmux セッションのスタイル設定
+  local tmux_style
+  tmux_style="tmux set-option -t '$session_name' status-style 'bg=$color,fg=#c0caf5'"
+  tmux_style="$tmux_style; tmux set-option -t '$session_name' pane-active-border-style 'fg=$color'"
+  tmux_style="$tmux_style; tmux set-option -t '$session_name' pane-border-style 'fg=#3b4261'"
+
   osascript -e "
     tell application \"Terminal\"
-      do script \"cd '$selected' && if tmux has-session -t '$session_name' 2>/dev/null; then tmux set-option -t '$session_name' status-style 'bg=$color,fg=#c0caf5'; tmux attach-session -t '$session_name'; else tmux new-session -d -s '$session_name'; tmux set-option -t '$session_name' status-style 'bg=$color,fg=#c0caf5'; tmux send-keys -t '$session_name' 'v .' Enter; tmux attach-session -t '$session_name'; fi\"
+      do script \"cd '$selected' && if tmux has-session -t '$session_name' 2>/dev/null; then $tmux_style; tmux attach-session -t '$session_name'; else tmux new-session -d -s '$session_name'; $tmux_style; tmux send-keys -t '$session_name' 'v .' Enter; tmux attach-session -t '$session_name'; fi\"
       activate
     end tell
   "
