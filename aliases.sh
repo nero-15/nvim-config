@@ -29,6 +29,9 @@ ws() {
     "$HOME/devel/spbl/repositories/spbl-api"
     "$HOME/devel/spbl/repositories/spbl-infra"
     "$HOME/devel/spbl/repositories/spbl-web-demo"
+    "$HOME/devel/spbl-docker"
+    "$HOME/devel/spbl-docker/server/www"
+    "$HOME/devel/spbl-docker/server/cms"
   )
 
   local selected
