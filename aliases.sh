@@ -25,7 +25,7 @@ ws() {
   # 階層が深いプロジェクトは直接登録
   local extra_projects=(
     "$HOME/devel"
-    "$HOME/devel/spbl/repositories/spbl-ai"
+    "$HOME/devel/spbl/repositories/spbl-ai-demo"
     "$HOME/devel/spbl/repositories/spbl-api"
     "$HOME/devel/spbl/repositories/spbl-infra"
     "$HOME/devel/spbl/repositories/spbl-web"
