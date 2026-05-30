@@ -83,8 +83,8 @@ map("n", "<leader>bd", "<cmd>bdelete<CR>", { desc = "Delete buffer" })
 -- 保存
 map("n", "<leader>w", "<cmd>w<CR>", { desc = "Save" })
 
--- 全選択
-map("n", "<leader>a", "ggVG", { desc = "Select all" })
+-- 全選択 (<leader>a は AI プレフィックスと衝突するため大文字に退避)
+map("n", "<leader>A", "ggVG", { desc = "Select all" })
 
 -- カレントファイルのパスをコピー
 map("n", "<leader>cp", '<cmd>let @+ = expand("%:p")<CR>', { desc = "Copy file path" })
