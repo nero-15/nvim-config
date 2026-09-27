@@ -1,0 +1,12 @@
+{
+  "Today": {
+    "prefix": "today",
+    "body": "$CURRENT_YEAR-$CURRENT_MONTH-$CURRENT_DATE",
+    "description": "今日の日付 (YYYY-MM-DD)"
+  },
+  "TODO": {
+    "prefix": "todo",
+    "body": "${LINE_COMMENT} TODO(${1:owner}): ${0}",
+    "description": "TODO コメント"
+  }
+}

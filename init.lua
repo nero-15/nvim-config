@@ -1,10 +1,14 @@
 -- ==========================================================
 -- Neovim Configuration
--- Speed-first setup for AI-driven development
--- Claude Code + Agent Teams + tmux workflow
+-- AI 駆動（仕様駆動）開発のためのエディタ。DNA は docs/00-dna.md
+-- 人間は仕様・ループ・評価基準の設計者。エディタは「読む・判断する・舵を切る」道具
 -- ==========================================================
 
--- Leader key (MUST be set before plugins load)
+if vim.fn.has("nvim-0.12") == 0 then
+  vim.notify("この設定は Neovim 0.12 以上が前提です（brew upgrade neovim）", vim.log.levels.ERROR)
+end
+
+-- Leader key (プラグインより先に設定する)
 vim.g.mapleader = " "
 vim.g.maplocalleader = " "
 
@@ -15,29 +19,29 @@ require("config.autocmds")
 
 -- Plugin manager: lazy.nvim
 local lazypath = vim.fn.stdpath("data") .. "/lazy/lazy.nvim"
-if not vim.loop.fs_stat(lazypath) then
-  vim.fn.system({
-    "git", "clone", "--filter=blob:none",
-    "https://github.com/folke/lazy.nvim.git",
-    "--branch=stable",
-    lazypath,
+if not vim.uv.fs_stat(lazypath) then
+  local out = vim.fn.system({
+    "git", "clone", "--filter=blob:none", "--branch=stable",
+    "https://github.com/folke/lazy.nvim.git", lazypath,
   })
+  if vim.v.shell_error ~= 0 then
+    vim.api.nvim_echo({ { "lazy.nvim の取得に失敗しました:\n" .. out, "ErrorMsg" } }, true, {})
+    return
+  end
 end
 vim.opt.rtp:prepend(lazypath)
 
--- Load plugins
 require("lazy").setup("plugins", {
   change_detection = { notify = false },
+  install = { colorscheme = { "tokyonight" } },
+  checker = { enabled = false }, -- 更新は :Lazy で明示的に行う (lazy-lock.json で固定)
   performance = {
     rtp = {
       disabled_plugins = {
         "gzip",
-        "matchit",
-        "matchparen",
-        "netrwPlugin",
+        "netrwPlugin", -- ディレクトリは oil.nvim が開く
         "tarPlugin",
         "tohtml",
-        "tutor",
         "zipPlugin",
       },
     },

@@ -25,7 +25,12 @@ return {
         markdown = { "prettier" },
         php = { "php_cs_fixer" },
         go = { "goimports", "gofumpt" },
+        terraform = { "terraform_fmt" },
+        hcl = { "terraform_fmt" },
+        sh = { "shfmt" },
       },
+      -- フォーマッターが入っていない環境でも保存を妨げない (R-21)
+      notify_no_formatters = false,
       format_on_save = {
         timeout_ms = 3000,
         lsp_format = "fallback",

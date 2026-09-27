@@ -1,0 +1,196 @@
+*nvim-config.txt*  AI 駆動（仕様駆動）開発のための Neovim 環境
+
+==============================================================================
+目次                                                   *nvim-config-contents*
+
+  1. はじめに ................................ |nvim-config-intro|
+  2. 1 日のループ ............................ |nvim-config-loop|
+  3. Vim の文法 .............................. |nvim-config-grammar|
+  4. 跳ぶ（移動） ............................ |nvim-config-motion|
+  5. 繰り返す ................................ |nvim-config-repeat|
+  6. 編集を増幅する .......................... |nvim-config-editing|
+  7. 複数ファイル ............................ |nvim-config-multifile|
+  8. Claude とレビュー ....................... |nvim-config-agents|
+  9. 仕様を読む .............................. |nvim-config-reading|
+ 10. 切り替え・学習 .......................... |nvim-config-toggles|
+ 11. 特殊ディレクトリ ........................ |nvim-config-dirs|
+
+==============================================================================
+1. はじめに                                               *nvim-config-intro*
+
+人間は仕様と評価基準を書き、エージェントが回す。エディタは「読む・判断する・
+舵を切る」ための道具。DNA はリポジトリの docs/00-dna.md。
+
+    <Space>         Leader。押して待てば which-key が候補を出す
+    <Space>?        このバッファだけのキー一覧
+    <Space>H        このヘルプ
+    <Space>fk       キーマップを検索
+
+==============================================================================
+2. 1 日のループ                                            *nvim-config-loop*
+
+起動するとダッシュボードが出る。t / s / w / c の 1 キーで入口に入れる。
+
+    :Tasks      <Space>st   引き継ぎ（TASKS.md 等）を開く
+    :Spec       <Space>ss   Spec Hub: 規約・引継・計画・文書・スキル・QA を一覧
+    :Plans      <Space>sp   計画だけ
+    :Adr        <Space>sa   ADR だけ
+    :SpecGrep   <Space>sg   docs/ と plans/ の中を grep
+                <Space>sc   CLAUDE.md
+    :Worktrees  <Space>gw   worktree 一覧。<CR> タブで開く / <C-d> 差分
+                            レビュー / <C-a> そこで Claude を起動
+    :Verify     <Space>vv   停止条件 (make/pnpm verify) → quickfix
+    :VerifyLog  <Space>vl   verify の全出力
+
+タブ = 作業文脈（worktree）。タブごとに作業ディレクトリが違う。
+    ]<Tab> [<Tab>           タブの移動
+    <Space><Tab>d           タブを閉じる
+
+==============================================================================
+3. Vim の文法                                           *nvim-config-grammar*
+
+操作は「動詞 + 対象」。部品を覚えれば組み合わせは自動で増える。
+
+    動詞   意味                 対象        意味 ~
+    d      削除                 w  b  e     単語単位
+    c      削除して入力         iw  aw      単語の中 / 単語ごと
+    y      コピー               i"  iq      引用符の中（q はどの引用符でも）
+    v      選択                 ib  ab      括弧の中（b はどの括弧でも）
+    > <    インデント           if  af      関数の中 / 関数ごと
+    gc     コメント             ic  ac      クラス
+    gu gU  小文字 / 大文字      ia  aa      引数
+    ys     囲む (surround)      iu  au      関数呼び出し
+    cs ds  囲みを変更 / 削除    ie          camelCase の 1 語
+                                io  ao      ブロック・if・ループ
+                                it  at      タグ
+                                ih          git の変更 (hunk)
+                                ip          段落
+
+    次の・前の対象: an( il" のように n / l を挟む（カーソルが外にあってよい）
+
+    ci"    引用符の中を書き換え        dap    段落ごと削除
+    yif    関数の中身をコピー          cin(   次の括弧の中を書き換え
+    ysiw"  単語を " で囲む             cs"'   " を ' に変える
+
+==============================================================================
+4. 跳ぶ（移動）                                          *nvim-config-motion*
+
+    5j  12k     相対行番号を見て一気に移動（jjjj はしない）
+    { }         段落単位
+    f{c} t{c}   行内の文字へ。; で次、, で前
+    s           flash: 画面内の任意の位置へ 2〜3 キーで
+    S           flash: 構文の単位で選ぶ
+    %           対応する括弧へ
+    ]m [m       関数        ]k [k   クラス       ]a [a   引数
+    ]h [h       git の変更  ]d [d   診断         ]t [t   TODO
+    ]] [[       カーソル下の単語の参照（Markdown では見出し）
+    gd          定義へ      grr 参照    gri 実装    grt 型定義
+    gO          シンボル / 見出し一覧
+    CTRL-O      ジャンプ前に戻る / CTRL-I で進む
+    -           親ディレクトリ (oil)
+
+    <Space><Space>  賢いファイル検索     <Space>ff  ファイル
+    <Space>fg       grep                 <Space>fs  カーソル下の単語で grep
+    <Space>fr       最近のファイル       <Space>fb  バッファ
+    <Space>e        エクスプローラー     <Space>ha  harpoon に追加
+    <Space>1〜4     harpoon のファイルへ <Space>hh  harpoon メニュー
+
+==============================================================================
+5. 繰り返す                                              *nvim-config-repeat*
+
+    .           直前の変更を繰り返す（最強のコマンド）
+    * cgn .     単語を検索 → 書き換え → . で次々と置換
+    qa ... q    マクロ a を記録（ステータスラインに REC）。@a 再生、@@ 再実行
+    :norm       選択行に Normal モードの操作を一括適用 >
+                    :'<,'>norm A;
+<   <Space>rs   カーソル下の単語の :s を組み立てる（置換結果がライブで見える）
+
+==============================================================================
+6. 編集を増幅する                                       *nvim-config-editing*
+
+    p  P        貼り付け。直後に CTRL-P / CTRL-N で過去のヤンクに差し替え
+    <Space>fy   ヤンク履歴
+    CTRL-A/X    数値・true/false・日付・&&/||・ADR の状態を増減
+    g CTRL-A    選択範囲を連番にする
+    crs crc     snake_case / camelCase に変換 (abolish)
+    cru cr-     UPPER_CASE / kebab-case
+    :S/a{,s}/b{,s}/g   単数・複数・大小文字をまとめて置換
+    ga= ga|     = や | で揃える（Markdown の表は vip ga|）
+    <Space>cj   1 行 ↔ 複数行（オブジェクト・引数）
+    <Space>cs   引数を次と入れ替え（<Space>cS で前と）
+    J K         (Visual) 選択行を上下に移動
+    < >         (Visual) 選択を保ったままインデント
+    <Space>u    undotree（変更履歴の木）
+
+==============================================================================
+7. 複数ファイル                                       *nvim-config-multifile*
+
+    ]q  [q      quickfix の次 / 前
+    <Space>xq   quickfix を開く。行を書き換えて :w → 各ファイルに反映
+    :cdo        quickfix の全項目にコマンドを適用 >
+                    :cdo s/old/new/ | update
+<   <Space>rr   プロジェクト全体の検索・置換 (grug-far)
+    <Space>rw   カーソル下の単語で検索・置換
+    <Space>rf   ファイル名を変更（import も LSP で追従）
+    mA  'A      ファイルをまたぐマーク（大文字）
+
+==============================================================================
+8. Claude とレビュー                                     *nvim-config-agents*
+
+    <Space>ac   Claude を開く / 閉じる（メイン。IDE 連携）
+    <Space>as   (Visual) 選択範囲を送る / (oil 等) ファイルを送る
+    <Space>ab   今のバッファを送る
+    <Space>aa   Claude の提案した diff を受理（:w でも可）
+    <Space>ad   拒否（:q でも可）
+    <Space>an   このタブの cwd で Claude を追加起動（並走）
+    <Space>al   起動中の Claude を切り替え
+    CTRL-H/J/K/L  ターミナルからもウィンドウ移動
+    <Esc><Esc>  ターミナルモードを抜ける
+
+    <Space>gd   作業ツリーの変更をレビュー (codediff)
+    <Space>gD   既定ブランチとの差分をレビュー
+    <Space>ghs  hunk を stage     <Space>ghr  hunk を戻す
+    <Space>ghp  hunk をプレビュー <Space>gb   その行の blame
+    <Space>gg   lazygit           :G          fugitive
+
+エージェントが書き換えたファイルは 1 秒以内に反映され、通知が出る。
+
+==============================================================================
+9. 仕様を読む                                           *nvim-config-reading*
+
+    <Space>mp   ブラウザでプレビュー（md / Mermaid / HTML / svg / pdf）
+    <Space>mP   プレビューを止める
+    <Space>mo   見出し一覧（Markdown）
+    <Space>mx   チェックボックスの切り替え（Markdown）
+    <Space>tr   整形表示の切り替え（Markdown）
+    <Space>tz   Zen（読むことに集中）
+    j  k        Markdown では折り返した見た目の行単位で動く
+
+Ghostty では Mermaid 図がバッファ内に直接描かれる（Terminal.app では出ない）。
+
+スニペット（Insert モードで入力して補完から選ぶ）: >
+    spec  adr  plan  tasks  mflow  mseq  mstate  mer  callout  details  today
+<
+==============================================================================
+10. 切り替え・学習                                      *nvim-config-toggles*
+
+    <Space>th   hardtime: 非効率な操作にヒント（jjjj など）
+    <Space>fH   hardtime: 悪い癖の集計
+    <Space>tp   precognition: 行内の跳び先を表示
+    <Space>tw   折り返し     <Space>ts   スペル      <Space>tn   相対行番号
+    <Space>td   診断         <Space>tv   診断を行の下に展開
+    <Space>ti   inlay hints  <Space>tc   conceal
+
+==============================================================================
+11. 特殊ディレクトリ                                       *nvim-config-dirs*
+
+設定リポジトリ直下の、Neovim が特別に読むディレクトリ。
+
+    plugin/           独自コマンドの登録（起動時に自動で読む）
+    after/ftplugin/   ファイルの種類ごとの設定（標準の後に効く）
+    after/lsp/        LSP サーバーごとの設定（nvim-lspconfig の後に効く）
+    ftdetect/         ファイルの種類の判定を追加
+    snippets/         自作スニペット（VS Code 形式）
+    doc/              この help。起動時に :helptags を自動生成
+
+ vim:tw=78:ts=8:ft=help:norl:

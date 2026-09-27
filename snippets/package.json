@@ -1,0 +1,10 @@
+{
+  "name": "nvim-config-snippets",
+  "description": "仕様駆動開発のための自作スニペット (VS Code 形式)",
+  "contributes": {
+    "snippets": [
+      { "language": ["markdown"], "path": "./markdown.json" },
+      { "language": ["all"], "path": "./all.json" }
+    ]
+  }
+}

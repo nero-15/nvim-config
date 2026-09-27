@@ -1,0 +1,138 @@
+{
+  "Spec (機能仕様)": {
+    "prefix": "spec",
+    "body": [
+      "# ${1:機能名}",
+      "",
+      "- 状態: ${2|Draft,Review,Accepted|}",
+      "- 更新: $CURRENT_YEAR-$CURRENT_MONTH-$CURRENT_DATE",
+      "- 関連: ${3:母艦設計書の節 / ADR}",
+      "",
+      "## 目的",
+      "${4:誰の、何のための機能か}",
+      "",
+      "## 振る舞い",
+      "${5}",
+      "",
+      "## 受け入れ条件 (eval: 機械で真偽判定できること)",
+      "- [ ] ${6:例: pnpm verify が exit 0}",
+      "",
+      "## 範囲外",
+      "- ${7}",
+      "",
+      "## 完了の証拠 / 戻し方",
+      "| 証拠 | 戻し方 |",
+      "|------|--------|",
+      "| ${8} | ${9} |",
+      "$0"
+    ],
+    "description": "機能仕様の雛形 (受け入れ条件・完了の証拠つき)"
+  },
+  "ADR": {
+    "prefix": "adr",
+    "body": [
+      "# ADR-${1:0000}: ${2:題}",
+      "",
+      "- 状態: ${3|Proposed,Accepted,Superseded,Rejected|}",
+      "- 日付: $CURRENT_YEAR-$CURRENT_MONTH-$CURRENT_DATE",
+      "",
+      "## 背景",
+      "${4}",
+      "",
+      "## 選択肢",
+      "| 案 | 概要 | 利点 | 欠点 |",
+      "|----|------|------|------|",
+      "| A. ${5} | | | |",
+      "",
+      "## 決定",
+      "${6}",
+      "",
+      "## 影響",
+      "${0}"
+    ],
+    "description": "ADR (判断記録) の雛形"
+  },
+  "Plan table (計画表)": {
+    "prefix": "plan",
+    "body": [
+      "| # | 作業 | 依存 | 担当 | 完了の証拠 | 戻し方 |",
+      "|---|------|------|------|------------|--------|",
+      "| 1 | ${1} | ${2:-} | ${3|Planner,Maker,Checker,人間|} | ${4} | ${5} |",
+      "$0"
+    ],
+    "description": "作業・依存・担当・完了の証拠/戻し方の表"
+  },
+  "Task log (tasks.md)": {
+    "prefix": "tasks",
+    "body": [
+      "# tasks — セッションをまたぐ引き継ぎ",
+      "",
+      "## Done",
+      "- $CURRENT_YEAR-$CURRENT_MONTH-$CURRENT_DATE: ${1}",
+      "",
+      "## In progress",
+      "- ${2}",
+      "",
+      "## Next",
+      "- [ ] ${0}"
+    ],
+    "description": "外部メモリ (done / in progress / next)"
+  },
+  "Mermaid flowchart": {
+    "prefix": "mflow",
+    "body": ["```mermaid", "flowchart ${1|LR,TD|}", "  ${2:A}[${3:開始}] --> ${4:B}[${5:次}]", "  $0", "```"],
+    "description": "Mermaid フローチャート"
+  },
+  "Mermaid sequence": {
+    "prefix": "mseq",
+    "body": [
+      "```mermaid",
+      "sequenceDiagram",
+      "  actor ${1:U} as ${2:ユーザー}",
+      "  participant ${3:S} as ${4:システム}",
+      "  $1->>$3: ${5:要求}",
+      "  $3-->>$1: ${6:応答}",
+      "  $0",
+      "```"
+    ],
+    "description": "Mermaid シーケンス図"
+  },
+  "Mermaid state": {
+    "prefix": "mstate",
+    "body": [
+      "```mermaid",
+      "stateDiagram-v2",
+      "  [*] --> ${1:Draft}",
+      "  $1 --> ${2:Published}: ${3:公開}",
+      "  $2 --> [*]",
+      "  $0",
+      "```"
+    ],
+    "description": "Mermaid 状態遷移図"
+  },
+  "Mermaid ER": {
+    "prefix": "mer",
+    "body": [
+      "```mermaid",
+      "erDiagram",
+      "  ${1:TENANTS} ||--o{ ${2:MEMBERS} : ${3:has}",
+      "  $2 {",
+      "    bigint id PK",
+      "    ${4:text} ${5:name}",
+      "  }",
+      "  $0",
+      "```"
+    ],
+    "description": "Mermaid ER 図"
+  },
+  "Callout": {
+    "prefix": "callout",
+    "body": ["> [!${1|NOTE,TIP,IMPORTANT,WARNING,CAUTION|}]", "> ${0}"],
+    "description": "GitHub 形式の callout"
+  },
+  "Details (折りたたみ)": {
+    "prefix": "details",
+    "body": ["<details>", "<summary>${1:詳細}</summary>", "", "${0}", "", "</details>"],
+    "description": "折りたたみブロック"
+  }
+}

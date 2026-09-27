@@ -1,125 +1,68 @@
 -- ==========================================================
--- Tree-sitter: 構文解析ベースのハイライト + テキストオブジェクト
--- Neovim 0.11+ の新 API を使用
+-- Tree-sitter: 構文解析 (Neovim 0.12 + nvim-treesitter main ブランチ)
+-- main ブランチでは setup({ ensure_installed }) は効かない。install() を使う
 -- ==========================================================
 
+local PARSERS = require("config.parsers")
+
 return {
-  -- ──────────────────────────────────────
-  -- nvim-treesitter: パーサーの管理
-  -- ──────────────────────────────────────
   {
     "nvim-treesitter/nvim-treesitter",
+    branch = "main",
     lazy = false,
     build = ":TSUpdate",
     config = function()
-      require("nvim-treesitter").setup({
-        ensure_installed = {
-          "lua",
-          "typescript",
-          "tsx",
-          "javascript",
-          "go",
-          "php",
-          "json",
-          "yaml",
-          "toml",
-          "html",
-          "css",
-          "scss",
-          "bash",
-          "markdown",
-          "markdown_inline",
-          "vim",
-          "vimdoc",
-          "gitcommit",
-          "diff",
-        },
-        auto_install = true,
-      })
+      local ts = require("nvim-treesitter")
+      if vim.fn.executable("tree-sitter") == 1 then
+        ts.install(PARSERS) -- 非同期。入っていれば何もしない
+      end
 
-      -- filetype → treesitter 言語のマッピング
-      vim.treesitter.language.register("tsx", "typescriptreact")
-      vim.treesitter.language.register("javascript", "javascriptreact")
-      vim.treesitter.language.register("bash", "sh")
+      vim.treesitter.language.register("bash", { "sh", "zsh" })
 
-      -- Neovim 0.11+: treesitter ハイライトを全バッファで有効化
       vim.api.nvim_create_autocmd("FileType", {
-        group = vim.api.nvim_create_augroup("TreesitterHighlight", { clear = true }),
+        group = vim.api.nvim_create_augroup("TreesitterStart", { clear = true }),
         callback = function(args)
-          pcall(vim.treesitter.start, args.buf)
+          local lang = vim.treesitter.language.get_lang(args.match)
+          if not lang then
+            return
+          end
+          if pcall(vim.treesitter.start, args.buf, lang) then
+            vim.bo[args.buf].indentexpr = "v:lua.require'nvim-treesitter'.indentexpr()"
+            return
+          end
+          -- 未インストールでも対応言語なら自動で入れる
+          if vim.fn.executable("tree-sitter") == 1 and vim.tbl_contains(ts.get_available(), lang) then
+            ts.install({ lang }):await(function()
+              if vim.api.nvim_buf_is_valid(args.buf) then
+                pcall(vim.treesitter.start, args.buf, lang)
+              end
+            end)
+          end
         end,
       })
     end,
   },
 
-  -- ──────────────────────────────────────
-  -- treesitter-textobjects: 関数・クラス単位の操作
-  -- daf (関数削除), yif (関数の中身ヤンク), vac (クラス選択) など
-  -- ──────────────────────────────────────
+  -- textobjects: 関数・クラス単位の移動と入れ替え (選択は mini.ai が担当)
   {
     "nvim-treesitter/nvim-treesitter-textobjects",
     branch = "main",
     event = { "BufReadPost", "BufNewFile" },
-    dependencies = { "nvim-treesitter/nvim-treesitter" },
     config = function()
-      require("nvim-treesitter-textobjects").setup({
-        select = {
-          lookahead = true,
-        },
-        move = {
-          set_jumps = true,
-        },
-      })
-
-      local select = function(query)
-        return function()
-          require("nvim-treesitter-textobjects.select").select_textobject(query, "textobjects")
-        end
-      end
-
-      local move_next = function(query)
-        return function()
-          require("nvim-treesitter-textobjects.move").goto_next_start(query, "textobjects")
-        end
-      end
-
-      local move_prev = function(query)
-        return function()
-          require("nvim-treesitter-textobjects.move").goto_previous_start(query, "textobjects")
-        end
-      end
-
-      local swap_next = function(query)
-        return function()
-          require("nvim-treesitter-textobjects.swap").swap_next(query)
-        end
-      end
-
-      local swap_prev = function(query)
-        return function()
-          require("nvim-treesitter-textobjects.swap").swap_previous(query)
-        end
-      end
-
+      require("nvim-treesitter-textobjects").setup({ move = { set_jumps = true } })
+      local move = require("nvim-treesitter-textobjects.move")
+      local swap = require("nvim-treesitter-textobjects.swap")
       local map = vim.keymap.set
 
-      -- Select: 関数・クラス・引数の選択
-      map({ "x", "o" }, "af", select("@function.outer"), { desc = "関数全体" })
-      map({ "x", "o" }, "if", select("@function.inner"), { desc = "関数の中身" })
-      map({ "x", "o" }, "ac", select("@class.outer"), { desc = "クラス全体" })
-      map({ "x", "o" }, "ic", select("@class.inner"), { desc = "クラスの中身" })
-      map({ "x", "o" }, "aa", select("@parameter.outer"), { desc = "引数全体" })
-      map({ "x", "o" }, "ia", select("@parameter.inner"), { desc = "引数の中身" })
+      map({ "n", "x", "o" }, "]m", function() move.goto_next_start("@function.outer", "textobjects") end, { desc = "次の関数" })
+      map({ "n", "x", "o" }, "[m", function() move.goto_previous_start("@function.outer", "textobjects") end, { desc = "前の関数" })
+      map({ "n", "x", "o" }, "]k", function() move.goto_next_start("@class.outer", "textobjects") end, { desc = "次のクラス" })
+      map({ "n", "x", "o" }, "[k", function() move.goto_previous_start("@class.outer", "textobjects") end, { desc = "前のクラス" })
+      map({ "n", "x", "o" }, "]a", function() move.goto_next_start("@parameter.inner", "textobjects") end, { desc = "次の引数" })
+      map({ "n", "x", "o" }, "[a", function() move.goto_previous_start("@parameter.inner", "textobjects") end, { desc = "前の引数" })
 
-      -- Move: 関数・クラス間のジャンプ
-      map({ "n", "x", "o" }, "]m", move_next("@function.outer"), { desc = "次の関数" })
-      map({ "n", "x", "o" }, "[m", move_prev("@function.outer"), { desc = "前の関数" })
-      map({ "n", "x", "o" }, "]]", move_next("@class.outer"), { desc = "次のクラス" })
-      map({ "n", "x", "o" }, "[[", move_prev("@class.outer"), { desc = "前のクラス" })
-
-      -- Swap: 引数の入れ替え
-      map("n", "<leader>sn", swap_next("@parameter.inner"), { desc = "引数を次と入れ替え" })
-      map("n", "<leader>sp", swap_prev("@parameter.inner"), { desc = "引数を前と入れ替え" })
+      map("n", "<leader>cs", function() swap.swap_next("@parameter.inner") end, { desc = "引数を次と入れ替え" })
+      map("n", "<leader>cS", function() swap.swap_previous("@parameter.inner") end, { desc = "引数を前と入れ替え" })
     end,
   },
 }
