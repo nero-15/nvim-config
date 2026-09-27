@@ -1,0 +1,41 @@
+# ==========================================================
+# Ghostty 設定（managed by nvim-config / setup.sh がリンク）
+# リンク先: ~/.config/ghostty/config
+# 確認: ghostty +validate-config / テーマ一覧: ghostty +list-themes
+# 方針: キーバインドはほぼ既定のまま。分割・移動は Neovim 側で行う（ADR-0003）
+# ==========================================================
+
+# ── フォント ─────────────────────────────
+font-family = "Hack Nerd Font Mono"
+font-size = 14
+
+# ── 配色（Neovim の tokyonight-night と揃える）──
+theme = "TokyoNight Night"
+
+# ── ウィンドウ ─────────────────────────────
+# 文字が枠に張り付かない程度の余白。余りは上下左右に均等配分
+window-padding-x = 8
+window-padding-y = 4
+window-padding-balance = true
+
+# ── キーボード ─────────────────────────────
+# Option を Alt(Meta) として送る（nvim の <M-x> 系マップ用）
+macos-option-as-alt = true
+
+# ── シェル連携 ─────────────────────────────
+# zsh を自動判別してシェル統合（プロンプト移動・カーソル形状・タイトル）を有効化
+shell-integration = detect
+shell-integration-features = cursor,sudo,title
+
+# ── クリップボード・マウス ───────────────────────
+# 選択した瞬間にシステムクリップボードへコピー
+copy-on-select = clipboard
+# nvim / tmux からの OSC 52 書き込みは許可、読み取りは都度確認
+clipboard-write = allow
+clipboard-read = ask
+# 入力中はマウスカーソルを隠す
+mouse-hide-while-typing = true
+
+# ── 終了時の確認 ─────────────────────────────
+# tmux が裏でセッションを保持するので、閉じるときの確認は不要
+confirm-close-surface = false
