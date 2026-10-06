@@ -15,14 +15,30 @@ return {
         go = { "golangcilint" },
       }
 
+      --- linter の実行ファイルがあるか。識別名 (golangcilint) と実行ファイル名 (golangci-lint) は違うので
+      --- 定義の cmd で確認する。定義・cmd とも関数のことがある
+      ---@param name string
+      ---@return boolean
+      local function executable(name)
+        local linter = lint.linters[name]
+        if type(linter) == "function" then
+          local ok, resolved = pcall(linter)
+          linter = ok and resolved or nil
+        end
+        local cmd = type(linter) == "table" and linter.cmd or name
+        if type(cmd) == "function" then
+          local ok, resolved = pcall(cmd)
+          cmd = ok and resolved or nil
+        end
+        return type(cmd) == "string" and vim.fn.executable(cmd) == 1
+      end
+
       -- 保存時・読み込み時にリント実行 (リンターが存在する場合のみ)
       vim.api.nvim_create_autocmd({ "BufWritePost", "BufReadPost", "InsertLeave" }, {
         group = vim.api.nvim_create_augroup("Linting", { clear = true }),
         callback = function()
           local linters = lint.linters_by_ft[vim.bo.filetype] or {}
-          local available = vim.tbl_filter(function(name)
-            return vim.fn.executable(name) == 1
-          end, linters)
+          local available = vim.tbl_filter(executable, linters)
           if #available > 0 then
             lint.try_lint(available)
           end

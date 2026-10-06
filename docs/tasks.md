@@ -12,6 +12,12 @@
 - 2026-09-28: `scripts/verify.sh`（V-1〜V-4, V-7）を追加。green（起動 24ms、スモーク 15/15）
 - 2026-09-28: treesitter パーサー 30 種・LSP サーバー 14 種をインストール
 - 2026-09-28: レッスン（lessons/00〜11, :Lesson）を追加。:Tutor を有効化、vim-be-good を追加
+- 2026-10-06: 新しいマシンで setup.sh を実行。依存ツール・Ghostty・Nerd Font・プラグイン（lazy-lock どおりに restore）・パーサー 31 種・LSP 14 種を導入。go も追加で入れた（gopls 用）。verify green
+- 2026-10-06: setup.sh をロックどおりに入れる `Lazy! restore` に変更し、依存チェックに go を追加（R-22）
+- 2026-10-06: claude をシェル・claudecode.nvim・:ClaudeNew のどれから起動しても `caffeinate -s` 付きにした（電源接続中は動いている間スリープしない。R-09）
+- 2026-10-06: Neovim 内の Claude でコピーすると入力欄に `52;c;<base64>` が出るバグを修正。原因は継承した `$TMUX` で Claude が OSC 52 を tmux 用 DCS に包み、Neovim の :terminal（libvterm）が解釈できずに表示していたこと。Neovim 内で起動する claude からは TMUX を外す（R-09）
+- 2026-10-06: PDE レビューの issue #1〜#6 を修正。Verify の quickfix を実行元 root 基準に（#1）・分割出力を行に復元（#2）・setup.sh で親ディレクトリ作成とリンクの再実行対応（#3）・lazy-lock を restore で維持し更新手順を README に記載（#4）・Go lint を cmd で判定（#5）・ws のセッション名にパスのハッシュを付与（#6）。回帰テストを smoke（19 件）と verify.sh の V-8 に追加
+- 2026-10-06: ws の色設定が tmux 3.7 で効いていなかった（`set-option -t '=name'` が no such session）。`=name:` に修正
 
 ## In progress
 - なし

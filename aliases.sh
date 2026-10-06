@@ -1,6 +1,15 @@
 # Neovim aliases (managed by dotfiles-nvim)
 alias v="nvim"
 
+# 電源接続中は claude が動いている間スリープさせない（caffeinate -s はバッテリー時は効かない。蓋を閉じたら止まる）
+# Neovim の :terminal の中では TMUX を外す（tmux 用に包んだ OSC 52 が入力欄に漏れるため。lua/workflow/claude.lua）
+claude() {
+  local -a pre=()
+  [[ -n "$NVIM" ]] && pre=(env -u TMUX -u TMUX_PANE)
+  command -v caffeinate &>/dev/null && pre+=(caffeinate -s)
+  if (( ${#pre[@]} )); then "${pre[@]}" claude "$@"; else command claude "$@"; fi
+}
+
 # tmux ステータスバー色割り当て（プロジェクト名のハッシュから決定論的に選択）
 _ws_color() {
   local colors=("#1e3a5f" "#1e4a2e" "#3a1e5f" "#1e4a4a" "#4a1e2e" "#4a3a1e" "#2e3a4a" "#4a1e4a")
@@ -33,12 +42,28 @@ _ws_detect_terminal() {
   fi
 }
 
-# セッションの色設定（tmux コマンド列）
+# tmux のセッション名を決める。basename だけだと client-a/api と client-b/api が衝突するので、
+# 物理パスのハッシュを付けて「api-1a2b」にする（同じパスなら常に同じ名前）。
+# 以前の basename だけのセッションは、開いているパスが同じときに限り再利用する
+_ws_session_name() {
+  local dir="$1" base hash legacy_path
+  base=$(basename "$dir" | tr '.:' '__') # tmux はセッション名の . と : を使えない
+  hash=$(printf '%s' "$dir" | cksum | awk '{printf "%04x", $1 % 65536}')
+  legacy_path=$(tmux display-message -p -t "=$base:" '#{session_path}' 2>/dev/null)
+  if [ -n "$legacy_path" ] && [ "$legacy_path" = "$dir" ]; then
+    echo "$base"
+  else
+    echo "$base-$hash"
+  fi
+}
+
+# セッションの色・表示名の設定（tmux コマンド列）。表示名（@ws_label）は tmux.conf の status-left が使う
 _ws_style_cmd() {
-  local session_name="$1" color="$2"
-  local cmd="tmux set-option -t '=$session_name' status-style 'bg=$color,fg=#c0caf5'"
-  cmd="$cmd; tmux set-option -t '=$session_name' pane-active-border-style 'fg=$color'"
-  cmd="$cmd; tmux set-option -t '=$session_name' pane-border-style 'fg=#3b4261'"
+  local session_name="$1" color="$2" label="$3"
+  local cmd="tmux set-option -t '=$session_name:' @ws_label '$label'"
+  cmd="$cmd; tmux set-option -t '=$session_name:' status-style 'bg=$color,fg=#c0caf5'"
+  cmd="$cmd; tmux set-option -t '=$session_name:' pane-active-border-style 'fg=$color'"
+  cmd="$cmd; tmux set-option -t '=$session_name:' pane-border-style 'fg=#3b4261'"
   echo "$cmd"
 }
 
@@ -86,7 +111,7 @@ _ws_script_ghostty() {
 
 # tmux 内から呼ばれたとき: 新しいウィンドウは開かず、今のクライアントをセッションごと切り替える
 _ws_switch_in_tmux() {
-  local dir="$1" session_name="$2" color="$3"
+  local dir="$1" session_name="$2" color="$3" label="$4"
   if [ -n "${WS_DRY_RUN:-}" ]; then
     echo "[dry-run] tmux: new-session -d -s '$session_name' -c '$dir'（未作成時）+ send-keys 'v' → 色設定 → switch-client -t '=$session_name'"
     return
@@ -95,9 +120,10 @@ _ws_switch_in_tmux() {
     tmux new-session -d -s "$session_name" -c "$dir"
     tmux send-keys -t "$session_name" 'v' Enter
   fi
-  tmux set-option -t "=$session_name" status-style "bg=$color,fg=#c0caf5"
-  tmux set-option -t "=$session_name" pane-active-border-style "fg=$color"
-  tmux set-option -t "=$session_name" pane-border-style "fg=#3b4261"
+  tmux set-option -t "=$session_name:" @ws_label "$label"
+  tmux set-option -t "=$session_name:" status-style "bg=$color,fg=#c0caf5"
+  tmux set-option -t "=$session_name:" pane-active-border-style "fg=$color"
+  tmux set-option -t "=$session_name:" pane-border-style "fg=#3b4261"
   tmux switch-client -t "=$session_name"
 }
 
@@ -141,21 +167,21 @@ ws() {
     echo "ディレクトリがありません: $selected"
     return 1
   fi
-  selected="${selected%/}"
+  selected=$(builtin cd "$selected" >/dev/null 2>&1 && pwd -P) # 相対パス・シンボリックリンクを正規化（セッション名のハッシュに使う）
 
-  local session_name
-  session_name=$(basename "$selected")
-  local color
+  local session_name label color
+  session_name=$(_ws_session_name "$selected")
+  label=$(basename "$selected")
   color=$(_ws_color "$session_name")
 
   if [ -n "${TMUX:-}" ] && [ -n "${WS_SWITCH:-}" ]; then
-    _ws_switch_in_tmux "$selected" "$session_name" "$color"
+    _ws_switch_in_tmux "$selected" "$session_name" "$color" "$label"
     return
   fi
 
   local terminal cmd script
   terminal=$(_ws_detect_terminal)
-  cmd=$(_ws_attach_cmd "$selected" "$session_name" "$(_ws_style_cmd "$session_name" "$color")")
+  cmd=$(_ws_attach_cmd "$selected" "$session_name" "$(_ws_style_cmd "$session_name" "$color" "$label")")
   if [ "$terminal" = "ghostty" ]; then
     script=$(_ws_script_ghostty "$cmd" "$selected")
   else

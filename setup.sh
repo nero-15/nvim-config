@@ -13,29 +13,15 @@ echo "=== Neovim dotfiles setup ==="
 echo ""
 
 # ──────────────────────────────────────
-# 1. 既存設定のバックアップ
+# 1. 設定のシンボリックリンク（nvim / tmux / Ghostty）
 # ──────────────────────────────────────
-if [ -d "$NVIM_CONFIG_DIR" ] || [ -L "$NVIM_CONFIG_DIR" ]; then
-  BACKUP_DIR="${NVIM_CONFIG_DIR}.backup.$(date +%Y%m%d_%H%M%S)"
-  echo "[backup] 既存の設定を $BACKUP_DIR にバックアップ"
-  mv "$NVIM_CONFIG_DIR" "$BACKUP_DIR"
-fi
-
-# ──────────────────────────────────────
-# 2. シンボリックリンク作成
-# ──────────────────────────────────────
-echo "[link] $SCRIPT_DIR → $NVIM_CONFIG_DIR"
-ln -sf "$SCRIPT_DIR" "$NVIM_CONFIG_DIR"
-
-# ──────────────────────────────────────
-# 3. tmux / Ghostty 設定のシンボリックリンク
-# ──────────────────────────────────────
-# 既存ファイルがあればバックアップしてからリンクを張る（リンク済みならスキップ）
+# 親ディレクトリが無ければ作る。既存の設定（ファイル・ディレクトリ）はバックアップしてからリンクを張る。
+# 正しくリンク済みならスキップ（再実行しても壊さない）
 link_config() {
   local label="$1" src="$2" dest="$3"
 
   mkdir -p "$(dirname "$dest")"
-  if [ -f "$dest" ] || [ -L "$dest" ]; then
+  if [ -e "$dest" ] || [ -L "$dest" ]; then
     if [ "$(readlink "$dest" 2>/dev/null)" = "$src" ]; then
       echo "[$label] $dest はリンク済み (スキップ)"
       return
@@ -45,15 +31,16 @@ link_config() {
     echo "[$label] 既存の $dest を $backup にバックアップ"
     mv "$dest" "$backup"
   fi
-  ln -sf "$src" "$dest"
+  ln -s "$src" "$dest"
   echo "[$label] $src → $dest"
 }
 
+link_config "nvim" "$SCRIPT_DIR" "$NVIM_CONFIG_DIR"
 link_config "tmux" "$SCRIPT_DIR/tmux.conf" "$HOME/.tmux.conf"
 link_config "ghostty" "$SCRIPT_DIR/ghostty/config" "${XDG_CONFIG_HOME:-$HOME/.config}/ghostty/config"
 
 # ──────────────────────────────────────
-# 4. シェルエイリアスの登録
+# 2. シェルエイリアスの登録
 # ──────────────────────────────────────
 ALIASES_SH="$SCRIPT_DIR/aliases.sh"
 SOURCE_LINE="source \"$ALIASES_SH\""
@@ -75,7 +62,7 @@ else
 fi
 
 # ──────────────────────────────────────
-# 5. 依存ツールの自動インストール
+# 3. 依存ツールの自動インストール
 # ──────────────────────────────────────
 echo ""
 echo "=== 依存ツール確認 ==="
@@ -111,6 +98,7 @@ check_cmd "fzf"           "fzf"             ""
 check_cmd "tree-sitter"   "tree-sitter-cli" ""
 check_cmd "claude"        ""                "npm install -g @anthropic-ai/claude-code"
 check_cmd "gh"            "gh"              ""
+check_cmd "go"            "go"              ""  # Mason が gopls をビルドするのに使う
 check_cmd "lazygit"       "lazygit"         ""
 check_cmd "magick"        "imagemagick"     ""
 check_cmd "mmdc"          ""                "npm install -g @mermaid-js/mermaid-cli"
@@ -166,7 +154,7 @@ if [ ${#MISSING_MANUAL[@]} -gt 0 ]; then
 fi
 
 # ──────────────────────────────────────
-# 6. Nerd Font のインストール
+# 4. Nerd Font のインストール
 # ──────────────────────────────────────
 echo ""
 echo "=== Nerd Font ==="
@@ -213,7 +201,7 @@ APPLESCRIPT
 fi
 
 # ──────────────────────────────────────
-# 7. プラグイン・パーサーの自動インストール
+# 5. プラグイン・パーサーの自動インストール
 # ──────────────────────────────────────
 echo ""
 echo "=== プラグイン・パーサーのインストール ==="
@@ -222,7 +210,8 @@ if command -v nvim &>/dev/null; then
   read -rp "  nvim のプラグインと treesitter パーサーをインストールしますか？ [y/N] " yn || yn=""
   if [[ "$yn" =~ ^[Yy]$ ]]; then
     echo "  [plugin] lazy.nvim プラグインをインストール中..."
-    nvim --headless "+Lazy! sync" +qa 2>/dev/null || echo "  [warn] Lazy sync に失敗しました（nvim 内で :Lazy を確認）"
+    # sync だと lazy-lock.json が最新版に書き換わる。restore でロックどおりのバージョンに揃える（R-22）
+    nvim --headless "+Lazy! restore" +qa 2>/dev/null || echo "  [warn] Lazy restore に失敗しました（nvim 内で :Lazy を確認）"
     echo "  [treesitter] パーサーをインストール中..."
     # nvim-treesitter (main) は install():wait() で同期インストール。一覧は lua/config/parsers.lua
     nvim --headless -c "lua require('nvim-treesitter').install(require('config.parsers')):wait(600000)" +qa 2>/dev/null \

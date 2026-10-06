@@ -37,7 +37,7 @@ return {
       { "<leader>al", "<cmd>ClaudeSessions<CR>", desc = "List Claude sessions" },
     },
     opts = {
-      terminal_cmd = "claude --dangerously-skip-permissions",
+      terminal_cmd = require("workflow.claude").cmd, -- :ClaudeNew と同じ（caffeinate 付き）
       log_level = "warn",
       focus_after_send = true,
       terminal = {

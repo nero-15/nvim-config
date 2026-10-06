@@ -8,7 +8,13 @@ local project = require("workflow.project")
 
 local M = {}
 
-M.cmd = "claude --dangerously-skip-permissions"
+-- TMUX を外す: Neovim の :terminal の中なのに tmux 配下と判定され、コピー時の OSC 52 を tmux 用の
+--   DCS（ESC Ptmux;）で包んで送ってくる。libvterm はそれを解釈できず、入力欄に「52;c;<base64>」が出る。
+--   素の OSC 52 なら Neovim が受けてクリップボードへ書く（:h terminal-osc52）
+-- 電源接続中は Claude が動いている間スリープさせない（caffeinate -s はバッテリー時は効かない。蓋を閉じたら止まる）
+M.cmd = "env -u TMUX -u TMUX_PANE "
+  .. (vim.fn.executable("caffeinate") == 1 and "caffeinate -s " or "")
+  .. "claude --dangerously-skip-permissions"
 
 local WIN = { position = "right", width = 0.4 }
 local slot = 0

@@ -7,8 +7,12 @@ local project = require("workflow.project")
 
 local M = {}
 
+-- 相対パスを実行元の root 基準で解決するための目印 (errorformat の %D = ディレクトリスタック)
+local ENTER_DIR = "nvim-verify: Entering directory '%s'"
+
 -- go / golangci-lint / tsc / vitest / playwright / 一般的な file:line:col 形式
 local ERRORFORMAT = table.concat({
+  "%Dnvim-verify: Entering directory '%f'",
   "%f:%l:%c: %m",
   "%f(%l\\,%c): %m",
   "%f:%l:%c - %m",
@@ -17,7 +21,7 @@ local ERRORFORMAT = table.concat({
   "%f:%l: %m",
 }, ",")
 
-local state = { running = false, output = {}, cmd = nil }
+local state = { running = false, output = {}, cmd = nil, root = nil }
 
 ---@param path string
 ---@return table|nil
@@ -62,13 +66,41 @@ function M.detect(root)
   return nil
 end
 
+--- 受信チャンクを行に組み立てる。行の途中で切れた断片はストリームごとに持ち越す
+---@param sink string[] 完成した行の追加先
+---@return fun(err: string?, data: string?) on_chunk
+---@return fun() flush EOF で改行の無い最終行を出す
+local function line_reader(sink)
+  local partial = ""
+  local function on_chunk(_, data)
+    if not data then
+      return
+    end
+    local lines = vim.split(partial .. data, "\n", { plain = true })
+    partial = table.remove(lines)
+    for _, line in ipairs(lines) do
+      sink[#sink + 1] = (line:gsub("\r$", ""))
+    end
+  end
+  local function flush()
+    if partial ~= "" then
+      sink[#sink + 1] = (partial:gsub("\r$", ""))
+      partial = ""
+    end
+  end
+  return on_chunk, flush
+end
+
 ---@param code integer
 ---@param elapsed number
 ---@param cmd string[]
-local function on_done(code, elapsed, cmd)
+---@param root string 実行時の root。cwd が変わっていても診断はここを基準に解決する
+local function on_done(code, elapsed, cmd, root)
   state.running = false
-  local title = "Verify: " .. table.concat(cmd, " ")
-  vim.fn.setqflist({}, " ", { title = title, lines = state.output, efm = ERRORFORMAT })
+  local title = string.format("Verify: %s (%s)", table.concat(cmd, " "), vim.fn.fnamemodify(root, ":~"))
+  local lines = { ENTER_DIR:format(root) }
+  vim.list_extend(lines, state.output)
+  vim.fn.setqflist({}, " ", { title = title, lines = lines, efm = ERRORFORMAT, context = { root = root } })
   local valid = vim.tbl_filter(function(item)
     return item.valid == 1
   end, vim.fn.getqflist())
@@ -100,19 +132,20 @@ function M.run()
   end
 
   vim.cmd("silent! wall")
-  state.running, state.output, state.cmd = true, {}, cmd
+  state.running, state.output, state.cmd, state.root = true, {}, cmd, root
   vim.notify("実行中… " .. table.concat(cmd, " "), vim.log.levels.INFO, { id = "verify", title = "Verify" })
 
   local started = vim.uv.hrtime()
-  local collect = function(_, data)
-    if data then
-      vim.list_extend(state.output, vim.split(data, "\n", { trimempty = true }))
-    end
-  end
-  local ok, err = pcall(vim.system, cmd, { cwd = root, text = true, stdout = collect, stderr = collect }, function(result)
+  local output = state.output
+  local on_stdout, flush_stdout = line_reader(output)
+  local on_stderr, flush_stderr = line_reader(output)
+  local opts = { cwd = root, text = true, stdout = on_stdout, stderr = on_stderr }
+  local ok, err = pcall(vim.system, cmd, opts, function(result)
     local elapsed = (vim.uv.hrtime() - started) / 1e9
     vim.schedule(function()
-      on_done(result.code, elapsed, cmd)
+      flush_stdout()
+      flush_stderr()
+      on_done(result.code, elapsed, cmd, root)
     end)
   end)
   if not ok then
@@ -132,7 +165,7 @@ function M.show_log()
   vim.bo[buf].buftype = "nofile"
   vim.bo[buf].bufhidden = "wipe"
   vim.api.nvim_buf_set_lines(buf, 0, -1, false, state.output)
-  vim.api.nvim_buf_set_name(buf, "verify://" .. table.concat(state.cmd or {}, " "))
+  vim.api.nvim_buf_set_name(buf, "verify://" .. (state.root or "") .. " " .. table.concat(state.cmd or {}, " "))
   vim.keymap.set("n", "q", "<cmd>close<CR>", { buffer = buf })
 end
 

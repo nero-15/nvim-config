@@ -25,6 +25,7 @@ local function tmpdir(files)
   local dir = vim.fn.tempname()
   vim.fn.mkdir(dir, "p")
   for name, content in pairs(files) do
+    vim.fn.mkdir(vim.fs.dirname(dir .. "/" .. name), "p")
     vim.fn.writefile(vim.split(content, "\n"), dir .. "/" .. name)
   end
   return dir
@@ -59,6 +60,97 @@ end)
 
 test("verify returns nil without runner", function()
   eq(require("workflow.verify").detect(tmpdir({ ["README.md"] = "x" })), nil)
+end)
+
+--- verify を実行して quickfix が埋まるまで待つ。実行中に cwd を switch_to へ切り替える
+local function run_verify(start_dir, switch_to)
+  local cwd = vim.fn.getcwd()
+  vim.fn.setqflist({}, "f")
+  vim.cmd.cd(start_dir)
+  require("workflow.verify").run()
+  if switch_to then
+    vim.cmd.cd(switch_to)
+  end
+  local done = vim.wait(5000, function()
+    return vim.fn.getqflist({ title = 0 }).title:find("^Verify:") ~= nil
+  end, 20)
+  vim.cmd.cd(cwd)
+  vim.cmd("silent! cclose")
+  vim.cmd("silent! only")
+  assert(done, "verify did not finish")
+  return vim.tbl_filter(function(i) return i.valid == 1 end, vim.fn.getqflist())
+end
+
+-- #1: 実行中に cwd が変わっても、診断は実行元 (root) のファイルを指す
+test("verify quickfix stays in the root it ran from", function()
+  local a = vim.fn.resolve(tmpdir({ ["scripts/.keep"] = "" }))
+  vim.fn.mkdir(a .. "/.git", "p")
+  vim.fn.mkdir(a .. "/src", "p")
+  vim.fn.mkdir(a .. "/sub", "p")
+  vim.fn.writefile({ "package main" }, a .. "/src/main.go")
+  vim.fn.writefile({
+    "sleep 0.3",
+    "echo 'src/main.go:1:1: error in A'",
+    "echo '" .. a .. "/src/main.go:2:1: absolute'",
+    "exit 1",
+  }, a .. "/scripts/verify.sh")
+  local b = vim.fn.resolve(tmpdir({ ["src/main.go"] = "package main" }))
+  -- cwd がサブディレクトリでも root 基準で解決する
+  local items = run_verify(a .. "/sub", b)
+  eq(#items, 2)
+  for _, item in ipairs(items) do
+    eq(vim.fn.resolve(vim.api.nvim_buf_get_name(item.bufnr)), a .. "/src/main.go")
+  end
+  eq(vim.fn.getqflist({ context = 0 }).context.root, a)
+end)
+
+-- #2: 行の途中で切れた出力を行に戻してから quickfix に渡す
+test("verify joins chunked output per stream", function()
+  local a = vim.fn.resolve(tmpdir({ ["scripts/.keep"] = "" }))
+  vim.fn.writefile({
+    "mkdir -p src lib && touch src/main.go lib/x.go",
+    "printf 'src/ma'",
+    "printf 'lib/x.go:3:' >&2",
+    "sleep 0.2",
+    "printf 'in.go:1:1: chunked error\\n'",
+    "printf '4: stderr error' >&2",
+    "exit 1",
+  }, a .. "/scripts/verify.sh")
+  local items = run_verify(a)
+  local got = vim.tbl_map(function(i)
+    local name = vim.uv.fs_realpath(vim.api.nvim_buf_get_name(i.bufnr)) or vim.api.nvim_buf_get_name(i.bufnr)
+    return name:sub(#vim.uv.fs_realpath(a) + 2) .. ":" .. i.lnum .. ":" .. i.text
+  end, items)
+  table.sort(got)
+  eq(got, { "lib/x.go:3:stderr error", "src/main.go:1:chunked error" })
+end)
+
+-- #5: linter は識別名ではなく実行ファイル (cmd) の有無で判定する
+test("lint runs golangci-lint when its command is on PATH", function()
+  require("lazy").load({ plugins = { "nvim-lint" } })
+  local lint = require("lint")
+  local bin = tmpdir({ ["golangci-lint"] = "#!/bin/sh" })
+  vim.fn.setfperm(bin .. "/golangci-lint", "rwxr-xr-x")
+  local path, try_lint = vim.env.PATH, lint.try_lint
+  local called = {}
+  lint.try_lint = function(names) called = names end
+  local function fire(env_path)
+    vim.env.PATH = env_path
+    called = {}
+    local buf = vim.api.nvim_create_buf(false, true)
+    vim.bo[buf].filetype = "go"
+    vim.api.nvim_buf_call(buf, function()
+      vim.api.nvim_exec_autocmds("BufWritePost", { group = "Linting", buffer = buf })
+    end)
+    vim.api.nvim_buf_delete(buf, { force = true })
+    return called
+  end
+  local ok, err = pcall(function()
+    eq(fire(bin .. ":" .. path), { "golangcilint" }, "with golangci-lint")
+    eq(fire(tmpdir({ x = "" })), {}, "without golangci-lint")
+  end)
+  vim.env.PATH, lint.try_lint = path, try_lint
+  assert(ok, err)
 end)
 
 -- ── project / worktree ──
