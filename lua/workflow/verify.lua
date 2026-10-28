@@ -1,11 +1,12 @@
 -- ==========================================================
--- verify: 停止条件 (make verify / pnpm verify) をエディタから回す (R-06)
+-- check / verify: 日常の影響範囲検証と節目の全体検証を分けて回す (R-06)
 -- 結果は quickfix に流し、]q で赤に直接飛べるようにする
 -- ==========================================================
 
 local project = require("workflow.project")
 
 local M = {}
+local MODES = { check = "Check", verify = "Verify" }
 
 -- go / golangci-lint / tsc / vitest / playwright / 一般的な file:line:col 形式
 local ERRORFORMAT = table.concat({
@@ -45,20 +46,23 @@ local function node_runner(root)
   return "npm"
 end
 
---- プロジェクトの種類から verify コマンドを決める
+--- 指定した検証だけを探す。check が無くても verify へは代用しない。
 ---@param root string
+---@param mode? "check"|"verify"
 ---@return string[]|nil
-function M.detect(root)
+function M.detect(root, mode)
+  mode = mode or "verify"
+  if not MODES[mode] then return nil end
   local pkg = read_json(root .. "/package.json")
-  if pkg and type(pkg.scripts) == "table" and type(pkg.scripts.verify) == "string" then
-    return { node_runner(root), "run", "verify" }
+  if pkg and type(pkg.scripts) == "table" and type(pkg.scripts[mode]) == "string" then
+    return { node_runner(root), "run", mode }
   end
   local makefile = root .. "/Makefile"
-  if vim.uv.fs_stat(makefile) and vim.fn.match(vim.fn.readfile(makefile), "^verify:") >= 0 then
-    return { "make", "verify" }
+  if vim.uv.fs_stat(makefile) and vim.fn.match(vim.fn.readfile(makefile), "^" .. mode .. ":") >= 0 then
+    return { "make", mode }
   end
-  if vim.uv.fs_stat(root .. "/scripts/verify.sh") then
-    return { "bash", "scripts/verify.sh" }
+  if vim.uv.fs_stat(root .. "/scripts/" .. mode .. ".sh") then
+    return { "bash", "scripts/" .. mode .. ".sh" }
   end
   return nil
 end
@@ -91,36 +95,43 @@ local function on_done(code, elapsed, run)
   run.exit_code, run.elapsed = code, elapsed
   run.finished_at = os.date("!%Y-%m-%dT%H:%M:%SZ")
   run.finished_head = head(run.root)
-  local title = "Verify [" .. run.root .. "]: " .. table.concat(run.command, " ")
+  local title = MODES[run.mode] .. " [" .. run.root .. "]: " .. table.concat(run.command, " ")
   local items, parse_error = quickfix_items(run)
   vim.fn.setqflist({}, " ", { title = title, items = items, context = vim.deepcopy(run) })
   local valid = vim.tbl_filter(function(item) return item.valid == 1 end, items)
   local summary = string.format("%.1fs / quickfix %d 件", elapsed, #valid)
   local changed = run.started_head ~= run.finished_head
   if parse_error then
-    vim.notify("verify の診断を解決できませんでした: " .. parse_error, vim.log.levels.ERROR)
+    vim.notify(run.mode .. " の診断を解決できませんでした: " .. parse_error, vim.log.levels.ERROR)
     M.show_log()
   elseif code == 0 and not changed then
-    vim.notify("green ✓ " .. summary, vim.log.levels.INFO, { id = "verify", title = title })
+    vim.notify(run.mode .. " green ✓ " .. summary, vim.log.levels.INFO, { id = "verify", title = title })
   elseif code == 0 then
-    vim.notify("verify exit 0 / 実行中に HEAD が変わりました。再検証してください", vim.log.levels.WARN,
+    vim.notify(run.mode .. " exit 0 / 実行中に HEAD が変わりました。再検証してください", vim.log.levels.WARN,
       { id = "verify", title = title })
   else
-    vim.notify("red ✗ (exit " .. code .. ") " .. summary, vim.log.levels.ERROR, { id = "verify", title = title })
+    vim.notify(run.mode .. " red ✗ (exit " .. code .. ") " .. summary, vim.log.levels.ERROR, { id = "verify", title = title })
     if #valid > 0 then vim.cmd("botright copen") else M.show_log() end
   end
 end
 
---- verify を非同期で実行する
-function M.run()
+--- 指定した検証を非同期実行。引数なしは既存の verify と同じ。
+---@param mode? "check"|"verify"
+function M.run(mode)
+  mode = mode or "verify"
+  if not MODES[mode] then
+    vim.notify("検証モードは check / verify を指定してください", vim.log.levels.WARN)
+    return
+  end
   if state.running then
-    vim.notify("verify は実行中です", vim.log.levels.WARN)
+    vim.notify(state.run.mode .. " は実行中です", vim.log.levels.WARN)
     return
   end
   local root = project.root()
-  local cmd = M.detect(root)
+  local cmd = M.detect(root, mode)
   if not cmd then
-    vim.notify("verify コマンドが見つかりません (package.json の scripts.verify / Makefile の verify: / scripts/verify.sh)",
+    vim.notify(string.format("%s コマンドが見つかりません (package.json の scripts.%s / Makefile の %s: / scripts/%s.sh)",
+      mode, mode, mode, mode),
       vim.log.levels.WARN)
     return
   end
@@ -131,20 +142,20 @@ function M.run()
 
   local saved, save_error = pcall(vim.cmd, "silent wall")
   if not saved then
-    vim.notify("保存に失敗したため verify を中止しました: " .. tostring(save_error), vim.log.levels.ERROR)
+    vim.notify("保存に失敗したため " .. mode .. " を中止しました: " .. tostring(save_error), vim.log.levels.ERROR)
     return
   end
   sequence = sequence + 1
   local run = {
-    id = sequence, root = root, command = vim.deepcopy(cmd),
+    id = sequence, mode = mode, root = root, command = vim.deepcopy(cmd),
     started_at = os.date("!%Y-%m-%dT%H:%M:%SZ"), started_head = head(root),
     note = "HEAD は未コミット内容を識別しません。結果は実行時点の記録で、現在のファイルの保証ではありません。",
   }
   state.running, state.output, state.run = true, {}, run
   vim.fn.setqflist({}, " ", {
-    title = "Verify [" .. root .. "]: 実行中", items = {}, context = vim.deepcopy(run),
+    title = MODES[mode] .. " [" .. root .. "]: 実行中", items = {}, context = vim.deepcopy(run),
   })
-  vim.notify("実行中… " .. table.concat(cmd, " "), vim.log.levels.INFO, { id = "verify", title = "Verify" })
+  vim.notify("実行中… " .. table.concat(cmd, " "), vim.log.levels.INFO, { id = "verify", title = MODES[mode] })
 
   local started = vim.uv.hrtime()
   local tails = { stdout = "", stderr = "" }
@@ -174,22 +185,23 @@ function M.run()
   if not ok then
     state.running = false
     run.exit_code, run.finished_at = -1, os.date("!%Y-%m-%dT%H:%M:%SZ")
-    state.output = { "verify を起動できませんでした: " .. tostring(err) }
+    state.output = { mode .. " を起動できませんでした: " .. tostring(err) }
     vim.fn.setqflist({}, " ", {
-      title = "Verify [" .. root .. "]: 起動失敗", items = {}, context = vim.deepcopy(run),
+      title = MODES[mode] .. " [" .. root .. "]: 起動失敗", items = {}, context = vim.deepcopy(run),
     })
     vim.notify(state.output[1], vim.log.levels.ERROR)
   end
 end
 
---- 直前の verify の全出力をスクラッチバッファで開く
+--- 直前の check / verify の実行記録をスクラッチバッファで開く
 function M.show_log()
   local run = state.run
   if not run then
-    vim.notify("verify の実行記録はまだありません", vim.log.levels.INFO)
+    vim.notify("check / verify の実行記録はまだありません", vim.log.levels.INFO)
     return
   end
   local lines = {
+    "mode: " .. run.mode,
     "root: " .. run.root,
     "command: " .. table.concat(run.command, " "),
     "started: " .. run.started_at,

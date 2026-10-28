@@ -22,6 +22,9 @@ nvim() {
   return 0
 }
 export -f nvim
+# 本テストはshellの成否判定だけが対象。graphテストは外側のV-10で実行する。
+node() { return 0; }
+export -f node
 for VERIFY_FIXTURE_MODE in silent-failure missing-timing valid; do
   export VERIFY_FIXTURE_MODE
   result=0

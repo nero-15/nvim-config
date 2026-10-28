@@ -85,6 +85,18 @@ out=$(cd "$tmp" && bash -c '
 code=$?
 [ "$code" -eq 0 ] && [ -z "$out" ] && pass "V-8 ws のセッション名" || { fail "V-8 ws のセッション名 (exit $code):"; echo "$out"; }
 
+# V-9: 現行文書の入口とファイルリンク（外部URL・節アンカーは対象外）。
+out=$(nvim --clean --headless -l scripts/doc-links.lua 2>&1)
+code=$?
+echo "$out" | sed 's/^/  /'
+[ "$code" -eq 0 ] && pass "V-9 docs のリンクと到達性" || fail "V-9 docs のリンクと到達性"
+
+# V-10: Claude用役割ガード・保存auditの制御フロー（LLM実行なし）。
+out=$(node scripts/graph-tests.mjs 2>&1)
+code=$?
+echo "$out" | sed 's/^/  /'
+[ "$code" -eq 0 ] && pass "V-10 実行グラフの境界" || fail "V-10 実行グラフの境界"
+
 echo ""
 if [ $FAILED -eq 0 ]; then
   echo "green ✓"

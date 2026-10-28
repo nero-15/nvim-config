@@ -49,13 +49,22 @@ Vim の操作は **「動詞 + 対象」** の組み合わせ。覚えるのは�
 - 雛形: Insert モードで `spec` / `adr` / `plan` / `mflow` などを入力して補完から選ぶ
 - 図: Ghostty ならそのまま表示。ブラウザで見るなら `<Space>mp`
 - レビュー: `<Space>gd`（全体）→ `]h` で hunk を巡回 → `<Space>ghs` で stage
-- 停止条件: `<Space>vv` → 赤なら `]q` で直接飛ぶ
+- 日常の確認: `<Space>vc`（`:Check`）、全体検証: `<Space>vv`（`:Verify`）→ 赤なら `]q` で直接飛ぶ
+
+### CheckとVerifyを使い分ける
+
+- `<Space>vc`は対象プロジェクトの明示的な `check` を実行する。`package.json` の `scripts.check` → Makefileの `check:` → `scripts/check.sh` の順に探す。
+- `check`未定義なら通知する。勝手にVerifyやtypecheckを実行しない。nvim-config自身は `make check` と `make verify` が同じ全体検証を使う。
+- Check/Verifyは同時には実行しない。保存に失敗すれば中止する。
+- `<Space>vl`（`:VerifyLog`）は両者共用の直前ログ。modeと実行元を確認する。scratch bufferなので、引き継ぎの証拠は別途記録する。
+- 検査内容と合否は [04-verification.md](04-verification.md)、担当間の受け渡しは [01-dev-loop.md](01-dev-loop.md) を参照する。
 
 ### 複数エージェントの成果を確認する
 
 - `<Space>ss`（Spec Hub）は Markdown に加えて `docs/**/*.html`・`docs/**/*.mmd` も一覧する。最近の調査HTMLを選び、`<Space>mp` でブラウザ表示できる。`<Space>sg` の仕様検索も同じ形式を対象にする。
+- Claude Codeの役割定義・保存したworkflow・hook設定もSpec Hubから探せる。Codexではこれらの権限制限は自動適用されないため、担当依頼で所有範囲を明示する。
 - スキルの入口は `.claude/skills/`・`.agents/skills/`・`.codex/skills/` 内の `SKILL.md`。which-key の `<Space>s` から辿れる。
-- `<Space>vv` は保存してから実行する。保存できないバッファがある場合は中止するので、保存先や権限を確認する。
+- 保存できないバッファがある場合は、保存先や権限を確認してから検証を再実行する。
 - 実行中に `<Space>gw` で別 worktree へ移っても、診断は開始した worktree のファイルを指す。分割されて届いたログも改行までつないで解析する。
 - `<Space>vl`（`:VerifyLog`）で実行元・コマンド・開始終了時刻・HEAD・終了コードを見る。HEADが実行中に変わったら再検証する。未コミット編集はHEADでは区別できないため、エージェントがさらに編集した後は再実行する。
 - 単独の `.mmd` は保存成功後に変換する。同名の図を複数worktreeで開いても、プレビューの出力は混ざらない。

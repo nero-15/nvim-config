@@ -50,10 +50,14 @@ flowchart LR
 | `:Tasks` | `<Space>st` | 引き継ぎ（TASKS.md など）を開く |
 | `:Spec` | `<Space>ss` | 規約・引継・計画・文書・スキル・QA の一覧 |
 | `:Worktrees` | `<Space>gw` | worktree を新しいタブで開く / 差分レビュー / そこで Claude |
+| `:Check` | `<Space>vc` | プロジェクトが明示した日常検証（`make check` / `pnpm check`等） |
 | `:Verify` | `<Space>vv` | `make verify` / `pnpm verify` を実行 → quickfix |
 | `:VerifyLog` | `<Space>vl` | 実行元・HEAD・時刻・終了コード・全出力を確認 |
 | `:ClaudeNew` | `<Space>an` | Claude を追加で起動（並走） |
 | `:Preview` | `<Space>mp` | Markdown / Mermaid / HTML をブラウザでプレビュー |
+
+日々の反復は `:Check`、全体の確認は `:Verify`。未定義なら通知し、別の検証へ暗黙に切り替えない。このリポジトリは検証が短いため、`make check` と `make verify` は同じ検査を行う。
+作業の依存・担当・差し戻しは [実行グラフの運用](docs/01-dev-loop.md)、検査範囲は [検証の正本](docs/04-verification.md) を参照。役割と保存した監査も `:Spec` から開ける。
 
 ## シェルコマンド
 

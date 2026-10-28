@@ -15,9 +15,10 @@ local function call(mod, fn, ...)
   end
 end
 
--- 停止条件
-command("Verify", call("verify", "run"), "停止条件 (make/pnpm verify) を実行して quickfix へ")
-command("VerifyLog", call("verify", "show_log"), "直前の verify の全出力を開く")
+-- 検証: 日常の影響範囲と、節目の全体検証を区別する
+command("Check", call("verify", "run", "check"), "日常の検証 (make/pnpm check) を実行して quickfix へ")
+command("Verify", call("verify", "run"), "全体検証 (make/pnpm verify) を実行して quickfix へ")
+command("VerifyLog", call("verify", "show_log"), "直前の check / verify の実行記録・出力を開く")
 
 -- 外部メモリ (仕様・計画・タスク)
 command("Spec", call("spec", "pick"), "Spec Hub: 規約・引継・計画・文書を一覧")

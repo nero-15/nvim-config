@@ -25,12 +25,16 @@ flowchart TD
 ```
 .
 ├── CLAUDE.md / AGENTS.md   # エージェント向けの入口
-├── docs/                   # DNA・要求・ADR（Neovim は読み込まない）
+├── docs/                   # DNA・運用・要求・ADR（設定として自動実行しない）
+├── .claude/agents/          # Claude CodeのMaker/Checker定義
+├── .claude/workflows/       # 保存した読み取り監査
+├── .claude/settings.json    # Claude Codeのhook設定
 ├── init.lua
 ├── lua/config/             # options / keymaps / autocmds / parsers / indent
 ├── lua/plugins/            # lazy.nvim のプラグイン定義（ドメインごと。下表）
-├── lua/workflow/           # 独自コマンドの実装（verify / worktree / spec / claude / preview / tabline）
-├── scripts/                # verify.sh（停止条件）/ smoke.lua（スモークテスト）
+├── lua/workflow/           # 独自コマンドの実装（verify / worktree / spec / claude / preview / lesson / tabline）
+├── scripts/                # verify・回帰検査・役割guard・文書リンク検査
+├── Makefile                # check / verify / doc-links-check の入口
 ├── ghostty/config          # Ghostty の設定（setup.sh がリンク）
 │
 │   ── 以下は Neovim が特別に読む runtimepath ディレクトリ ──
@@ -64,14 +68,21 @@ flowchart TD
 
 | コマンド | 実装 | 要求 |
 |----------|------|------|
-| `:Verify` `:VerifyLog` | `verify.lua` | R-06 |
+| `:Check` `:Verify` `:VerifyLog` | `verify.lua` | R-06 |
 | `:Spec` `:Tasks` `:Plans` `:Adr` `:SpecGrep` | `spec.lua` | R-04 |
 | `:Worktrees` | `worktree.lua` | R-05, R-07 |
 | `:ClaudeNew` `:ClaudeSessions` | `claude.lua` | R-09 |
 | `:Preview` `:PreviewStop` | `preview.lua` | R-02, R-03 |
+| `:Lesson` | `lesson.lua` | R-11 |
 | （タブライン） | `tabline.lua` | R-05 |
 
-どれも「今のタブの cwd」を起点にする（`project.lua`）。worktree ごとにタブを分ければ、コマンドもその worktree に対して動く。
+プロジェクト操作は現在のタブのcwdからrootを解決する（`project.lua`）。worktreeごとにタブを分けると、検証や仕様検索の対象も切り替わる。`Preview`は現在のバッファ、`VerifyLog`は直前に実行したCheck/Verifyの記録を対象にし、表示時のcwdへ付け替えない。Lessonは設定リポジトリの教材を扱う。
+
+### 実行グラフと検証の接続
+
+運用ルールの正本は [01-dev-loop.md](01-dev-loop.md)、検査の内容は [04-verification.md](04-verification.md)。Claude Codeの役割定義・hook・監査workflowは `.claude/`、guardの実装と回帰検査は `scripts/` に分ける。CodexではClaude Code用の権限制限やhookは自動適用されない。
+
+`verify.lua`はCheck/Verifyの明示定義を選び、root・mode・コマンド・開始終了時刻/HEAD・終了コードを保持する。両モードは同時には実行せず、ログは共用のscratch bufferに表示する。永続的な監査ログではないため、引き継ぎに必要な証拠は成果物とともに別途記録する。
 
 ### 特殊ディレクトリの使い分け
 
@@ -85,4 +96,4 @@ flowchart TD
 | 学習用チートシート | `doc/*.txt` | `:help` から引ける＝手を止めずに調べられる |
 
 > `docs/` は Neovim の runtimepath 上の特殊ディレクトリ（`plugin/`, `ftplugin/`, `after/`, `doc/` など）ではないので、
-> 起動やコマンドには影響しない。一方、単数形の `doc/` は `:help` の対象。**設計書は `docs/`、エディタ内で引くヘルプは `doc/`** と使い分ける。
+> 設定としては自動実行されない。Spec Hubは文書を一覧し、検証は参照切れを確認する。一方、単数形の `doc/` は `:help` の対象。**設計書は `docs/`、エディタ内で引くヘルプは `doc/`** と使い分ける。

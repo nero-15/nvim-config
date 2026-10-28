@@ -42,12 +42,13 @@ return {
     opts = { headerMaxWidth = 80 },
   },
 
-  -- 停止条件 (verify)。実装は lua/workflow/verify.lua
+  -- 日常の check / 節目の verify。実装は lua/workflow/verify.lua
   {
     "folke/snacks.nvim",
     keys = {
-      { "<leader>vv", "<cmd>Verify<CR>", desc = "Run verify → quickfix" },
-      { "<leader>vl", "<cmd>VerifyLog<CR>", desc = "Verify log" },
+      { "<leader>vc", "<cmd>Check<CR>", desc = "Run check (日常) → quickfix" },
+      { "<leader>vv", "<cmd>Verify<CR>", desc = "Run verify (全体) → quickfix" },
+      { "<leader>vl", "<cmd>VerifyLog<CR>", desc = "Check / verify log" },
       { "]q", "<cmd>cnext<CR>zz", desc = "Next quickfix" },
       { "[q", "<cmd>cprev<CR>zz", desc = "Prev quickfix" },
     },

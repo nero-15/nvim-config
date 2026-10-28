@@ -52,6 +52,11 @@ local ok, err = pcall(function()
   write(dir .. "/a/docs/recent.html", { "<!doctype html><title>Recent</title>" })
   vim.fn.mkdir(dir .. "/a/.agents/skills/example", "p")
   write(dir .. "/a/.agents/skills/example/SKILL.md", { "# Example" })
+  vim.fn.mkdir(dir .. "/a/.claude/agents", "p")
+  vim.fn.mkdir(dir .. "/a/.claude/workflows", "p")
+  write(dir .. "/a/.claude/agents/checker.md", { "# Checker" })
+  write(dir .. "/a/.claude/workflows/audit.js", { "// audit" })
+  write(dir .. "/a/.claude/settings.json", { "{}" })
   package.loaded["workflow.project"] = { root = function() return dir .. "/a" end, find_first = function() end }
   local picked, grepped
   _G.Snacks = { picker = {
@@ -62,6 +67,8 @@ local ok, err = pcall(function()
   local found = {}
   for _, item in ipairs(picked) do found[item.text] = true end
   assert(found["docs/recent.html"] and found["docs/flow.mmd"] and found[".agents/skills/example/SKILL.md"], "missing recent spec format")
+  assert(found[".claude/agents/checker.md"] and found[".claude/workflows/audit.js"] and found[".claude/settings.json"],
+    "missing execution graph entry points")
   require("workflow.spec").grep()
   assert(vim.tbl_contains(grepped, "*.html") and vim.tbl_contains(grepped, "*.mmd"))
 

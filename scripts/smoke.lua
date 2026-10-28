@@ -34,7 +34,7 @@ end
 -- ── 独自コマンド (plugin/workflow.lua) ──
 test("user commands exist", function()
   local cmds = vim.api.nvim_get_commands({})
-  for _, name in ipairs({ "Verify", "VerifyLog", "Spec", "Tasks", "Adr", "Plans", "SpecGrep", "Worktrees",
+  for _, name in ipairs({ "Check", "Verify", "VerifyLog", "Spec", "Tasks", "Adr", "Plans", "SpecGrep", "Worktrees",
     "ClaudeNew", "ClaudeSessions", "Preview", "PreviewStop" }) do
     assert(cmds[name], "missing :" .. name)
   end
@@ -226,7 +226,7 @@ end)
 
 -- ── キーマップ (R-11: which-key から辿れる) ──
 test("leader keymaps are registered", function()
-  local want = { " ss", " st", " vv", " gw", " gd", " ac", " an", " mp", " ff", " e", " u", " rr" }
+  local want = { " ss", " st", " vc", " vv", " gw", " gd", " ac", " an", " mp", " ff", " e", " u", " rr" }
   local have = {}
   for _, m in ipairs(vim.api.nvim_get_keymap("n")) do
     have[m.lhs:gsub("<Space>", " ")] = true
@@ -285,6 +285,12 @@ test("ws isolates projects and preserves existing sessions", function()
       assert(result.code == 0, shell .. ": " .. (result.stderr or "") .. (result.stdout or ""))
     end
   end
+end)
+
+test("documentation gate rejects missing and unreachable documents", function()
+  local result = vim.system({ vim.v.progpath, "--clean", "--headless", "-l",
+    vim.fn.stdpath("config") .. "/scripts/doc-links-regression.lua" }, { text = true }):wait(10000)
+  assert(result.code == 0, (result.stderr or "") .. (result.stdout or ""))
 end)
 
 local total = results.passed + #results.failed

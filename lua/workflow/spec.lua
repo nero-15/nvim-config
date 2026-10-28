@@ -11,7 +11,7 @@ local M = {}
 local TASK_FILES = { "TASKS.md", "docs/tasks.md", "docs/development/tasks.md", "docs/**/tasks.md" }
 
 -- エージェント規約 (最優先で読むもの)
-local AGENT_FILES = { "CLAUDE.md", "AGENTS.md", "CONVENTIONS.md", "README.md" }
+local AGENT_FILES = { "CLAUDE.md", "AGENTS.md", "CONVENTIONS.md", "README.md", ".claude/settings.json" }
 
 -- 仕様として扱うディレクトリ
 local SPEC_GLOBS = {
@@ -20,12 +20,14 @@ local SPEC_GLOBS = {
   { glob = "docs/**/*.html", kind = "doc" },
   { glob = "docs/**/*.mmd", kind = "doc" },
   { glob = ".claude/skills/**/SKILL.md", kind = "skill" },
+  { glob = ".claude/agents/*.md", kind = "agent" },
+  { glob = ".claude/workflows/*.js", kind = "workflow" },
   { glob = ".agents/skills/**/SKILL.md", kind = "skill" },
   { glob = ".codex/skills/**/SKILL.md", kind = "skill" },
   { glob = "qa/cases/*.yaml", kind = "qa" },
 }
 
-local KIND_ORDER = { agent = 1, task = 2, plan = 3, doc = 4, skill = 5, qa = 6 }
+local KIND_ORDER = { agent = 1, task = 2, plan = 3, workflow = 4, doc = 5, skill = 6, qa = 7 }
 
 ---@param root string
 ---@return table[]
@@ -68,7 +70,7 @@ local function collect(root)
   return items
 end
 
-local KIND_LABEL = { agent = "規約", task = "引継", plan = "計画", doc = "文書", skill = "技能", qa = "検査" }
+local KIND_LABEL = { agent = "規約", task = "引継", plan = "計画", workflow = "手順", doc = "文書", skill = "技能", qa = "検査" }
 
 ---@param opts? { kinds?: string[], title?: string }
 function M.pick(opts)

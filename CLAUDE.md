@@ -7,7 +7,7 @@ AI 駆動（仕様駆動）開発のための Neovim + tmux 環境。人間は�
 **まず [docs/00-dna.md](docs/00-dna.md) を読む。** 設計書の索引は [docs/README.md](docs/README.md)。
 
 ## Stack
-- Neovim 0.11+（`vim.lsp.config` / `vim.lsp.enable` の新 API）
+- Neovim 0.12+（`vim.lsp.config` / `vim.lsp.enable` の新 API）
 - Plugin manager: lazy.nvim（`lazy-lock.json` でバージョン固定）
 - tmux 3.6+ / macOS / zsh
 - `setup.sh` がシンボリックリンク（`~/.config/nvim` → このリポジトリ）と依存ツールの導入を担う
@@ -26,6 +26,12 @@ AI 駆動（仕様駆動）開発のための Neovim + tmux 環境。人間は�
 
 ## Stop conditions (machine-judged)
 [docs/04-verification.md](docs/04-verification.md) を参照。最低限 `nvim --headless "+qa"` がエラー出力なしで終了すること。
+
+## Execution graph
+役割・並列化・作業パケット・差し戻しの正は [docs/01-dev-loop.md](docs/01-dev-loop.md)。
+Claudeの役割は `.claude/agents/maker.md` / `checker.md`、横断監査は `.claude/workflows/audit.js`。
+役割ガードは誤操作防止であり、Bashの完全な隔離ではない。通常のClaude起動が自動でMaker/Checkerへ変わるわけではない。
+Checkerは編集せず対象版の証拠を統括へ返す。明示指示なしにPRコメント等を送信しない。
 
 ## External memory
 セッション開始時に [docs/tasks.md](docs/tasks.md) を読み、終了時に更新する。
