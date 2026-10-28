@@ -10,25 +10,28 @@
 - setupは冪等なリンクとlockに基づくプラグイン復元を行う。Ghosttyの更新／検査は明示オプション。wsはパスのSHA256で識別し、旧basename／4桁cksumセッションは作成元一致時だけ再利用する。
 - 別環境の変更を統合し、Claudeの `caffeinate -s`、Neovim内のTMUX除去、Go依存導入を維持している。[ADR-0005](adr/0005-ghostty-1.4-and-workflow.md)
 
-## 作業中
+## 今回の更新（2026-10-28）
 
-- 2026-10-28: sportscom-api `a14fa731c` の実行グラフを参考に、役割・所有範囲・同じ版の検証をnvim-configへ適用する。[ADR-0006](adr/0006-execution-graph.md)
-- `:Check`／`<Space>vc`、Claude CodeのMaker／Checker・役割hook・保存audit workflow、文書参照検査を実装・統合中。現在の版に対する最終検証と独立レビューは、この項目を完了へ移す前に記録する。
+- sportscom-apiを `532d34305` から `a14fa731c` へfast-forwardでpullし、mainと作業木がcleanであることを確認。その実行グラフを参考に、役割・所有範囲・同じ版の検証をnvim-configへ適用した。API側のコード編集・検証コマンド実行はしていない。[ADR-0006](adr/0006-execution-graph.md)
+- `:Check`／`<Space>vc`、Claude CodeのMaker／Checker・役割hook・保存audit workflow、文書参照検査を実装。Spec Hubから役割と手順へ辿れる。
+- 独立レビューで、未使用のリンク定義による到達性の誤判定、Markdown内HTMLリンクの検査漏れ、Gitの指定方法によるpushガードの漏れを修正。Makerのpushは全て主担当へ委ねる。監査の反証結果が割れた場合も未確認として残す。
 - 現行運用を01、検証を04へ集約し、研究・HTMLに作成時点と現行導線を追加。過去の報告を現在の未実装一覧として読ませない。
 
 ## 直近の検証済み状態
 
-以下は**今回の実行グラフ変更前**、コミット `7e0e197` に記録された2026-10-28の結果。現在の作業中差分の合格を示さない。
+対象は `140d4e1064bde47bf4287266b97e32905561d39a`。独立Checkerが2026-10-28に確認し、検証前後のHEAD不変・作業木cleanを記録した。この実績記録の追記は後続の文書のみの変更として確認する。
 
-- 独立Checker: V-1〜V-4・V-7・V-8 green、起動22.630ms、smoke 25/25。
+- 独立Checker: `make check` exit 0、V-1〜V-4・V-7〜V-10 green、起動22.598ms、smoke 26/26。
+- docs: 18文書が索引から到達可能・ファイルリンク切れなし。役割ガードと監査制御: mockを含む14群pass。
 - which-key: 設定問題・overlap・duplicateなし。
 - lock復元とws: 一時Gitリポジトリ／専用tmux socketで検証。通常sandboxでsocketが作れないため、許可された環境で確認。
-- 実mmdc→PNG変換と画像確認pass。Ghostty内のインライン描画、実Claude操作、V-6全体、教材HTMLの実ブラウザ描画は未確認。
+- 前回 `7e0e197` では実mmdc→PNG変換と画像確認pass。Ghostty内のインライン描画、実Claude操作、V-6全体、教材HTMLの実ブラウザ描画は未確認。
+- 保存workflow／役割hookの実Claude Runtimeでの読込・実LLM監査は未確認。文書検査は外部URLの疎通・節アンカー・意味的整合を保証しない。
 - Ghosttyアプリと既存Neovimは強制再起動していない。新しい設定は作業の区切りで再起動して反映する。
 
 ## 残り
 
-- [ ] 今回の統合版について必要な機械検証と独立レビューを完了し、対象版・結果・未確認範囲をここへ記録する。
+- [x] 今回の統合版について必要な機械検証と独立レビューを完了し、対象版・結果・未確認範囲を記録した。
 - [ ] Ghostty上でMermaidのインライン表示、スクロール、サイズ変更を目視確認する（R-02）。
 - [ ] 実Claudeの選択・コピーと会話再開を確認する（R-09）。
 - [ ] 保存audit workflowは対応する実Runtimeで実行確認し、mock検査と区別して記録する。
