@@ -38,13 +38,26 @@ b_id=$(_ws_session_name "$b")
 tmux new-session -d -s api -c "$a"
 [ "$(_ws_session_name "$a")" = api ]
 [ "$(_ws_session_name "$b")" = "$b_id" ]
-cmd=$(_ws_attach_cmd "$b" "$b_id" "$(_ws_style_cmd "$b_id" "$(_ws_color "$b")")")
+cmd=$(_ws_attach_cmd "$b" "$b_id" "$(_ws_style_cmd "$b_id" "$(_ws_color "$b")" "$(basename "$b")")")
 /bin/sh -c "$cmd"
 /bin/sh -c "$cmd"
 [ "$(tmux display-message -p -t "=$b_id:" '#{session_path}')" = "$b" ]
 [ "$(tmux display-message -p -t '=api:' '#{session_path}')" = "$a" ]
 [ "$(tmux show-options -v -t "=$b_id:" status-left)" = '#[bold] api #[nobold]' ]
+[ "$(tmux show-options -v -t "=$b_id:" @ws_label)" = api ]
 [ "$(grep -c '^send-keys ' "$WS_TEST_DIR/actions")" -eq 1 ]
+# remote旧版の4桁cksum IDはパス一致時だけ維持する。
+mkdir -p "$WS_TEST_DIR/legacy/api.v2" "$WS_TEST_DIR/foreign"
+legacy=$(cd "$WS_TEST_DIR/legacy/api.v2" && pwd -P)
+legacy_id="api_v2-$(printf '%s' "$legacy" | cksum | awk '{printf "%04x", $1 % 65536}')"
+sha_id=$(_ws_session_name "$legacy")
+tmux new-session -d -s "$legacy_id" -c "$legacy"
+[ "$(_ws_session_name "$legacy")" = "$legacy_id" ]
+WS_DRY_RUN=1 WS_TERMINAL=ghostty ws "$legacy" > "$WS_TEST_DIR/legacy-dry"
+grep -F -- "$legacy_id" "$WS_TEST_DIR/legacy-dry" >/dev/null
+tmux kill-session -t "=$legacy_id:"
+tmux new-session -d -s "$legacy_id" -c "$WS_TEST_DIR/foreign"
+[ "$(_ws_session_name "$legacy")" = "$sha_id" ]
 ln -s "$b" "$WS_TEST_DIR/alias"
 WS_DRY_RUN=1 WS_TERMINAL=ghostty ws "$WS_TEST_DIR/alias/" > "$WS_TEST_DIR/dry"
 grep -F -- "$b_id" "$WS_TEST_DIR/dry" >/dev/null
@@ -54,7 +67,7 @@ weird="$WS_TEST_DIR/quo'te\"\$(touch WS_INJECTED)\\tail"
 mkdir -p "$weird"
 weird=$(cd "$weird" && pwd -P)
 weird_id=$(_ws_session_name "$weird")
-cmd=$(_ws_attach_cmd "$weird" "$weird_id" "$(_ws_style_cmd "$weird_id" "$(_ws_color "$weird")")")
+cmd=$(_ws_attach_cmd "$weird" "$weird_id" "$(_ws_style_cmd "$weird_id" "$(_ws_color "$weird")" "$(basename "$weird")")")
 /bin/sh -c "$cmd"
 [ "$(tmux display-message -p -t "=$weird_id:" '#{session_path}')" = "$weird" ]
 [ ! -e "$weird/WS_INJECTED" ]
@@ -69,4 +82,4 @@ WS_DRY_RUN=1 WS_TERMINAL=terminal ws "$weird" > "$WS_TEST_DIR/terminal-script"
 # switch経路も同じセッションを使う。stubはクライアントを切り替えない。
 TMUX=fixture WS_SWITCH=1 ws "$b"
 grep -F -- "switch-client -t =$b_id:" "$WS_TEST_DIR/actions" >/dev/null
-printf '%s\n' 'ws regression: duplicate names, legacy reuse, symlinks, shell/AppleScript quoting, attach/switch passed'
+printf '%s\n' 'ws regression: duplicate names, legacy basename/4-digit reuse, labels, symlinks, shell/AppleScript quoting, attach/switch passed'

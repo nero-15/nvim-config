@@ -98,3 +98,10 @@ flowchart LR
 2. 実装する（Claude に任せてよい）
 3. `bash scripts/verify.sh`（Neovim 内なら `<Space>vv`）が green になったら完了
 4. プラグインの入れ替えなどの判断は [docs/adr/](docs/adr/) に残し、[docs/tasks.md](docs/tasks.md) を更新する
+
+### プラグインの更新
+
+`setup.sh` は `lazy-lock.json` どおりの版を入れるだけで、更新はしない（R-22）。更新は手で行う。
+
+1. Neovim で `:Lazy update`（`lazy-lock.json` が新しい版に書き換わる）
+2. `bash scripts/verify.sh` が green なら `lazy-lock.json` をコミットする。壊れたらまず既知の正常なコミットのlockfileへ戻し、`bash setup.sh` のプラグイン導入で固定版を復元する（更新後のlockのままrestoreしても旧版には戻らない）。

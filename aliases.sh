@@ -1,6 +1,15 @@
 # Neovim aliases (managed by dotfiles-nvim)
 alias v="nvim"
 
+# 電源接続中は claude が動いている間スリープさせない（caffeinate -s はバッテリー時は効かない。蓋を閉じたら止まる）
+# Neovim の :terminal の中では TMUX を外す（tmux 用に包んだ OSC 52 が入力欄に漏れるため。lua/workflow/claude.lua）
+claude() {
+  local -a pre=()
+  [[ -n "${NVIM:-}" ]] && pre=(env -u TMUX -u TMUX_PANE)
+  command -v caffeinate &>/dev/null && pre+=(caffeinate -s)
+  if (( ${#pre[@]} )); then "${pre[@]}" claude "$@"; else command claude "$@"; fi
+}
+
 # tmux ステータスバー色割り当て（プロジェクト名のハッシュから決定論的に選択）
 _ws_color() {
   local colors=("#1e3a5f" "#1e4a2e" "#3a1e5f" "#1e4a4a" "#4a1e2e" "#4a3a1e" "#2e3a4a" "#4a1e4a")
@@ -27,9 +36,9 @@ _ws_applescript_quote() {
   printf '%s' "$value"
 }
 
-# 同名のプロジェクト/worktreeを区別。古いbasenameセッションは実行元が一致する場合だけ再利用。
+# 同名のプロジェクト/worktreeを区別。旧4桁hash/basenameは実行元が一致する場合だけ再利用。
 _ws_session_name() {
-  local dir="$1" label candidate existing digest
+  local dir="$1" label candidate existing digest legacy_base legacy_hash origin
   label=$(basename "$dir")
   if command -v shasum >/dev/null 2>&1; then
     digest=$(printf '%s' "$dir" | shasum -a 256 | cut -c1-12)
@@ -40,10 +49,11 @@ _ws_session_name() {
     return 1
   fi
   candidate="$(printf '%s' "$label" | LC_ALL=C tr -cs 'a-zA-Z0-9_-' '_' | cut -c1-32)-$digest"
-  # hash側を優先し、作成済みの新セッションから旧セッションへ戻らない。
-  for existing in "$candidate" "$label"; do
+  legacy_base=$(printf '%s' "$label" | tr '.:' '__')
+  legacy_hash=$(printf '%s' "$dir" | cksum | awk '{printf "%04x", $1 % 65536}')
+  # SHA側を優先。旧IDは名前だけを信用せず、作成時ディレクトリも確認する。
+  for existing in "$candidate" "$legacy_base-$legacy_hash" "$legacy_base" "$label"; do
     if tmux has-session -t "=$existing" 2>/dev/null; then
-      local origin
       origin=$(tmux display-message -p -t "=$existing:" '#{session_path}' 2>/dev/null)
       origin=$(cd "$origin" 2>/dev/null && pwd -P) || origin=""
       if [ "$origin" = "$dir" ]; then
@@ -85,9 +95,10 @@ _ws_detect_terminal() {
 
 # セッションの色設定（tmux コマンド列）
 _ws_style_cmd() {
-  local session_name="$1" color="$2"
+  local session_name="$1" color="$2" label="${3:-$1}"
+  local quoted_label=$(_ws_shell_quote "$label")
   local target=$(_ws_shell_quote "=$session_name:")
-  printf '%s\n' "tmux set-option -t $target status-style 'bg=$color,fg=#c0caf5' && tmux set-option -t $target pane-active-border-style 'fg=$color' && tmux set-option -t $target pane-border-style 'fg=#3b4261'"
+  printf '%s\n' "tmux set-option -t $target @ws_label $quoted_label && tmux set-option -t $target status-style 'bg=$color,fg=#c0caf5' && tmux set-option -t $target pane-active-border-style 'fg=$color' && tmux set-option -t $target pane-border-style 'fg=#3b4261'"
 }
 
 # 新しいウィンドウで実行するシェルコマンド（既存セッションなら attach、なければ作って nvim 起動）
@@ -155,6 +166,7 @@ _ws_switch_in_tmux() {
   tmux set-option -t "=$session_name:" pane-border-style "fg=#3b4261"
   local label=$(basename "$dir")
   label="${label//\#/##}"
+  tmux set-option -t "=$session_name:" @ws_label "$(basename "$dir")"
   tmux set-option -t "=$session_name:" status-left "#[bold] $label #[nobold]"
   tmux switch-client -t "=$session_name:"
 }
@@ -218,7 +230,7 @@ ws() {
 
   local terminal cmd script
   terminal=$(_ws_detect_terminal)
-  cmd=$(_ws_attach_cmd "$selected" "$session_name" "$(_ws_style_cmd "$session_name" "$color")")
+  cmd=$(_ws_attach_cmd "$selected" "$session_name" "$(_ws_style_cmd "$session_name" "$color" "$(basename "$selected")")")
   if [ "$terminal" = "ghostty" ]; then
     script=$(_ws_script_ghostty "$cmd" "$selected")
   else

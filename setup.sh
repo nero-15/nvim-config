@@ -43,9 +43,10 @@ echo "=== Neovim dotfiles setup ==="
 echo ""
 
 # ──────────────────────────────────────
-# 3. tmux / Ghostty 設定のシンボリックリンク
+# 1. 設定のシンボリックリンク（nvim / tmux / Ghostty）
 # ──────────────────────────────────────
-# 既存ファイルがあればバックアップしてからリンクを張る（リンク済みならスキップ）
+# 親ディレクトリが無ければ作る。既存の設定（ファイル・ディレクトリ）はバックアップしてからリンクを張る。
+# 正しくリンク済みならスキップ（再実行しても壊さない）
 link_config() {
   local label="$1" src="$2" dest="$3"
 
@@ -60,7 +61,7 @@ link_config() {
     echo "[$label] 既存の $dest を $backup にバックアップ"
     mv "$dest" "$backup"
   fi
-  ln -sf "$src" "$dest"
+  ln -s "$src" "$dest"
   echo "[$label] $src → $dest"
 }
 
@@ -69,7 +70,7 @@ link_config "tmux" "$SCRIPT_DIR/tmux.conf" "$HOME/.tmux.conf"
 link_config "ghostty" "$SCRIPT_DIR/ghostty/config" "${XDG_CONFIG_HOME:-$HOME/.config}/ghostty/config"
 
 # ──────────────────────────────────────
-# 4. シェルエイリアスの登録
+# 2. シェルエイリアスの登録
 # ──────────────────────────────────────
 ALIASES_SH="$SCRIPT_DIR/aliases.sh"
 SOURCE_LINE="source \"$ALIASES_SH\""
@@ -91,7 +92,7 @@ else
 fi
 
 # ──────────────────────────────────────
-# 5. 依存ツールの自動インストール
+# 3. 依存ツールの自動インストール
 # ──────────────────────────────────────
 echo ""
 echo "=== 依存ツール確認 ==="
@@ -127,6 +128,7 @@ check_cmd "fzf"           "fzf"             ""
 check_cmd "tree-sitter"   "tree-sitter-cli" ""
 check_cmd "claude"        ""                "npm install -g @anthropic-ai/claude-code"
 check_cmd "gh"            "gh"              ""
+check_cmd "go"            "go"              ""  # Mason が gopls をビルドするのに使う
 check_cmd "lazygit"       "lazygit"         ""
 check_cmd "magick"        "imagemagick"     ""
 check_cmd "mmdc"          ""                "npm install -g @mermaid-js/mermaid-cli"
@@ -182,7 +184,7 @@ if [ ${#MISSING_MANUAL[@]} -gt 0 ]; then
 fi
 
 # ──────────────────────────────────────
-# 6. Nerd Font のインストール
+# 4. Nerd Font のインストール
 # ──────────────────────────────────────
 echo ""
 echo "=== Nerd Font ==="
@@ -229,7 +231,7 @@ APPLESCRIPT
 fi
 
 # ──────────────────────────────────────
-# 7. プラグイン・パーサーの自動インストール
+# 5. プラグイン・パーサーの自動インストール
 # ──────────────────────────────────────
 echo ""
 echo "=== プラグイン・パーサーのインストール ==="
@@ -238,6 +240,7 @@ if command -v nvim &>/dev/null; then
   read -rp "  nvim のプラグインと treesitter パーサーをインストールしますか？ [y/N] " yn || yn=""
   if [[ "$yn" =~ ^[Yy]$ ]]; then
     echo "  [plugin] lazy.nvim プラグインをインストール中..."
+    # ロックを維持し、既存pluginの復元と未導入pluginの導入を両方検証する（R-22）。
     nvim --headless -u NONE -l "$SCRIPT_DIR/scripts/terminal-restore.lua"
     echo "  [treesitter] パーサーをインストール中..."
     # nvim-treesitter (main) は install():wait() で同期インストール。一覧は lua/config/parsers.lua

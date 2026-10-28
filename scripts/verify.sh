@@ -71,6 +71,20 @@ code=$?
 echo "$out" | sed 's/^/  /'
 [ $code -eq 0 ] && pass "V-7 スモークテスト" || fail "V-7 スモークテスト"
 
+# V-8: シェル関数 (aliases.sh)。ws は同名ディレクトリでも別セッションにする (#6)
+tmp="$VERIFY_DIR/ws-dry-run"
+mkdir -p "$tmp/client-a/api" "$tmp/client-b/api"
+out=$(cd "$tmp" && bash -c '
+  source "$0/aliases.sh"
+  # 名前の決定性だけを検査。稼働中のサーバー/セッションの有無には依存しない。
+  tmux() { return 1; }
+  name() { WS_DRY_RUN=1 WS_TERMINAL=terminal ws "$1" | grep -o "attach-session -t '"'"'=[^'"'"']*" | head -1; }
+  a=$(name client-a/api); b=$(name client-b/api); a2=$(name "$PWD/client-a/api/")
+  [ -n "$a" ] && [ "$a" != "$b" ] && [ "$a" = "$a2" ] || { echo "a=$a b=$b a2=$a2"; exit 1; }
+' "$ROOT" 2>&1)
+code=$?
+[ "$code" -eq 0 ] && [ -z "$out" ] && pass "V-8 ws のセッション名" || { fail "V-8 ws のセッション名 (exit $code):"; echo "$out"; }
+
 echo ""
 if [ $FAILED -eq 0 ]; then
   echo "green ✓"

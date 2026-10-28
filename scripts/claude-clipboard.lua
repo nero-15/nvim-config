@@ -32,6 +32,9 @@ vim.fn.writefile({
   "fi",
 }, dir .. "/claude")
 assert(vim.fn.setfperm(dir .. "/claude", "rwx------") == 1)
+-- caffeinate の引数を維持しつつ、テストでは実機の電源状態を変更しない。
+vim.fn.writefile({ "#!/bin/sh", '[ "$1" = -s ] || exit 1', "shift", 'exec "$@"' }, dir .. "/caffeinate")
+assert(vim.fn.setfperm(dir .. "/caffeinate", "rwx------") == 1)
 
 local function check(cmd, tmux)
   copies = {}
