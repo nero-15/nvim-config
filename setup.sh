@@ -1,7 +1,7 @@
 #!/bin/bash
 # ==========================================================
 # Neovim dotfiles セットアップスクリプト
-# 実行: bash setup.sh
+# 実行: bash setup.sh / bash setup.sh --upgrade-ghostty
 # ==========================================================
 
 set -euo pipefail
@@ -9,23 +9,38 @@ set -euo pipefail
 NVIM_CONFIG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/nvim"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
+usage() {
+  echo "Usage: bash setup.sh [--check-ghostty | --upgrade-ghostty | --help]"
+  echo "  (no option)        設定をリンクし、依存ツールを確認する"
+  echo "  --check-ghostty     Ghostty 1.4以上と設定を検証する（変更なし）"
+  echo "  --upgrade-ghostty   Homebrew管理のGhosttyだけを更新して検証する"
+}
+
+if [ "$#" -gt 1 ]; then usage >&2; exit 2; fi
+case "${1:-}" in
+  --help|-h) usage; exit 0 ;;
+  --check-ghostty) exec bash "$SCRIPT_DIR/scripts/terminal-check.sh" ;;
+  --upgrade-ghostty)
+    if ! command -v brew >/dev/null 2>&1; then
+      echo "[error] Homebrew がありません。Ghostty アプリの更新機能を使ってください。" >&2
+      exit 1
+    fi
+    if ! brew list --cask --versions ghostty; then
+      echo "[error] Homebrew管理のGhosttyを確認できません。手動導入した.appは変更しません。" >&2
+      exit 1
+    fi
+    # auto_updates のcaskも明示的な更新対象にする。ほかのアプリは更新しない。
+    brew upgrade --cask --greedy ghostty
+    bash "$SCRIPT_DIR/scripts/terminal-check.sh"
+    echo "[ghostty] 次回アプリ起動から更新版が使われます（自動終了・再起動はしません）。"
+    exit 0
+    ;;
+  "") ;;
+  *) usage >&2; exit 2 ;;
+esac
+
 echo "=== Neovim dotfiles setup ==="
 echo ""
-
-# ──────────────────────────────────────
-# 1. 既存設定のバックアップ
-# ──────────────────────────────────────
-if [ -d "$NVIM_CONFIG_DIR" ] || [ -L "$NVIM_CONFIG_DIR" ]; then
-  BACKUP_DIR="${NVIM_CONFIG_DIR}.backup.$(date +%Y%m%d_%H%M%S)"
-  echo "[backup] 既存の設定を $BACKUP_DIR にバックアップ"
-  mv "$NVIM_CONFIG_DIR" "$BACKUP_DIR"
-fi
-
-# ──────────────────────────────────────
-# 2. シンボリックリンク作成
-# ──────────────────────────────────────
-echo "[link] $SCRIPT_DIR → $NVIM_CONFIG_DIR"
-ln -sf "$SCRIPT_DIR" "$NVIM_CONFIG_DIR"
 
 # ──────────────────────────────────────
 # 3. tmux / Ghostty 設定のシンボリックリンク
@@ -35,13 +50,13 @@ link_config() {
   local label="$1" src="$2" dest="$3"
 
   mkdir -p "$(dirname "$dest")"
-  if [ -f "$dest" ] || [ -L "$dest" ]; then
+  if [ -e "$dest" ] || [ -L "$dest" ]; then
     if [ "$(readlink "$dest" 2>/dev/null)" = "$src" ]; then
       echo "[$label] $dest はリンク済み (スキップ)"
       return
     fi
     local backup
-    backup="${dest}.backup.$(date +%Y%m%d_%H%M%S)"
+    backup="${dest}.backup.$(date +%Y%m%d_%H%M%S).$$"
     echo "[$label] 既存の $dest を $backup にバックアップ"
     mv "$dest" "$backup"
   fi
@@ -49,6 +64,7 @@ link_config() {
   echo "[$label] $src → $dest"
 }
 
+link_config "nvim" "$SCRIPT_DIR" "$NVIM_CONFIG_DIR"
 link_config "tmux" "$SCRIPT_DIR/tmux.conf" "$HOME/.tmux.conf"
 link_config "ghostty" "$SCRIPT_DIR/ghostty/config" "${XDG_CONFIG_HOME:-$HOME/.config}/ghostty/config"
 
@@ -222,7 +238,7 @@ if command -v nvim &>/dev/null; then
   read -rp "  nvim のプラグインと treesitter パーサーをインストールしますか？ [y/N] " yn || yn=""
   if [[ "$yn" =~ ^[Yy]$ ]]; then
     echo "  [plugin] lazy.nvim プラグインをインストール中..."
-    nvim --headless "+Lazy! sync" +qa 2>/dev/null || echo "  [warn] Lazy sync に失敗しました（nvim 内で :Lazy を確認）"
+    nvim --headless -u NONE -l "$SCRIPT_DIR/scripts/terminal-restore.lua"
     echo "  [treesitter] パーサーをインストール中..."
     # nvim-treesitter (main) は install():wait() で同期インストール。一覧は lua/config/parsers.lua
     nvim --headless -c "lua require('nvim-treesitter').install(require('config.parsers')):wait(600000)" +qa 2>/dev/null \

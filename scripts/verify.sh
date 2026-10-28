@@ -9,6 +9,18 @@ set -uo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT" || exit 1
 
+# 検証対象はこの checkout。ユーザーの別設定や state/cache を使用しない (R-21, R-22)。
+# data は既存の固定済みプラグインを使い、検証のための更新は行わない。
+VERIFY_DIR=$(mktemp -d "${TMPDIR:-/tmp}/nvim-verify.XXXXXX") || exit 1
+trap 'rm -rf "$VERIFY_DIR"' EXIT
+mkdir -p "$VERIFY_DIR/config" "$VERIFY_DIR/state" "$VERIFY_DIR/cache" || exit 1
+ln -s "$ROOT" "$VERIFY_DIR/config/nvim" || exit 1
+export NVIM_APPNAME=nvim
+export XDG_CONFIG_HOME="$VERIFY_DIR/config"
+export XDG_STATE_HOME="$VERIFY_DIR/state"
+export XDG_CACHE_HOME="$VERIFY_DIR/cache"
+export NVIM_LOG_FILE="$VERIFY_DIR/nvim.log"
+
 STARTUP_BUDGET_MS=80
 FAILED=0
 
@@ -19,7 +31,8 @@ echo "=== nvim-config verify ==="
 
 # V-1: 起動エラーなし
 out=$(nvim --headless "+qa" 2>&1)
-[ -z "$out" ] && pass "V-1 起動エラーなし" || { fail "V-1 起動時の出力:"; echo "$out"; }
+code=$?
+[ "$code" -eq 0 ] && [ -z "$out" ] && pass "V-1 起動エラーなし" || { fail "V-1 起動失敗 (exit $code):"; echo "$out"; }
 
 # V-2: 全 Lua ファイルの構文
 syntax_errors=""
@@ -34,17 +47,22 @@ done < <(find init.lua lua plugin after ftdetect scripts -name '*.lua' -type f)
 
 # V-3: 全プラグインを読み込んでもエラーが出ない
 out=$(nvim --headless "+Lazy! load all" "+qa" 2>&1)
-[ -z "$out" ] && pass "V-3 全プラグイン読み込み" || { fail "V-3 読み込み時の出力:"; echo "$out"; }
+code=$?
+[ "$code" -eq 0 ] && [ -z "$out" ] && pass "V-3 全プラグイン読み込み" || { fail "V-3 読み込み失敗 (exit $code):"; echo "$out"; }
 
 # V-4: 起動時間
-log=$(mktemp)
-for _ in 1 2 3; do nvim --headless --startuptime "$log" +qa >/dev/null 2>&1; done
-ms=$(grep "NVIM STARTED" "$log" | awk '{print $1}' | sort -n | head -1)
-rm -f "$log"
-if awk -v ms="$ms" -v b="$STARTUP_BUDGET_MS" 'BEGIN{exit !(ms <= b)}'; then
+log="$VERIFY_DIR/startup.log"
+startup_ok=1
+for _ in 1 2 3; do
+  nvim --headless --startuptime "$log" +qa >/dev/null 2>&1 || startup_ok=0
+done
+samples=$(awk '/NVIM STARTED/ && $1 ~ /^[0-9]+([.][0-9]+)?$/ {print $1}' "$log" 2>/dev/null)
+ms=$(printf '%s\n' "$samples" | sort -n | head -1)
+count=$(printf '%s\n' "$samples" | awk 'NF {n++} END {print n+0}')
+if [ "$startup_ok" -eq 1 ] && [ "$count" -eq 3 ] && [ -n "$ms" ] && awk -v ms="$ms" -v b="$STARTUP_BUDGET_MS" 'BEGIN{exit !(ms <= b)}'; then
   pass "V-4 起動 ${ms}ms (<= ${STARTUP_BUDGET_MS}ms)"
 else
-  fail "V-4 起動 ${ms}ms (> ${STARTUP_BUDGET_MS}ms)"
+  fail "V-4 起動計測失敗または予算超過 (${ms:-計測なし}ms / ${count} samples)"
 fi
 
 # V-7: スモークテスト (独自コマンド・特殊ディレクトリ・キーマップ)

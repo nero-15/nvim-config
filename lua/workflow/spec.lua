@@ -17,7 +17,11 @@ local AGENT_FILES = { "CLAUDE.md", "AGENTS.md", "CONVENTIONS.md", "README.md" }
 local SPEC_GLOBS = {
   { glob = "plans/**/*.md", kind = "plan" },
   { glob = "docs/**/*.md", kind = "doc" },
+  { glob = "docs/**/*.html", kind = "doc" },
+  { glob = "docs/**/*.mmd", kind = "doc" },
   { glob = ".claude/skills/**/SKILL.md", kind = "skill" },
+  { glob = ".agents/skills/**/SKILL.md", kind = "skill" },
+  { glob = ".codex/skills/**/SKILL.md", kind = "skill" },
   { glob = "qa/cases/*.yaml", kind = "qa" },
 }
 
@@ -127,7 +131,7 @@ function M.grep()
   local dirs = vim.tbl_filter(function(dir)
     return vim.fn.isdirectory(dir) == 1
   end, { root .. "/docs", root .. "/plans" })
-  Snacks.picker.grep({ title = "Grep specs", dirs = #dirs > 0 and dirs or { root }, glob = { "*.md", "*.yaml" } })
+  Snacks.picker.grep({ title = "Grep specs", dirs = #dirs > 0 and dirs or { root }, glob = { "*.md", "*.yaml", "*.html", "*.mmd" } })
 end
 
 return M

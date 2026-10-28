@@ -4,8 +4,58 @@ alias v="nvim"
 # tmux ステータスバー色割り当て（プロジェクト名のハッシュから決定論的に選択）
 _ws_color() {
   local colors=("#1e3a5f" "#1e4a2e" "#3a1e5f" "#1e4a4a" "#4a1e2e" "#4a3a1e" "#2e3a4a" "#4a1e4a")
-  local hash=$(echo -n "$1" | cksum | awk '{print $1}')
-  echo "${colors[$((hash % 8 + 1))]}"
+  local hash=$(printf '%s' "$1" | cksum | awk '{print $1}')
+  local offset=0
+  [ -n "${ZSH_VERSION:-}" ] && offset=1
+  printf '%s\n' "${colors[$((hash % 8 + offset))]}"
+}
+
+# shell と AppleScript は別々に引用する。パス内の引用符・改行もデータとして扱う。
+_ws_shell_quote() {
+  printf "'"
+  printf '%s' "$1" | sed "s/'/'\\\\''/g"
+  printf "'"
+}
+
+_ws_applescript_quote() {
+  local value="$1"
+  value="${value//\\/\\\\}"
+  value="${value//\"/\\\"}"
+  value="${value//$'\n'/\\n}"
+  value="${value//$'\r'/\\r}"
+  value="${value//$'\t'/\\t}"
+  printf '%s' "$value"
+}
+
+# 同名のプロジェクト/worktreeを区別。古いbasenameセッションは実行元が一致する場合だけ再利用。
+_ws_session_name() {
+  local dir="$1" label candidate existing digest
+  label=$(basename "$dir")
+  if command -v shasum >/dev/null 2>&1; then
+    digest=$(printf '%s' "$dir" | shasum -a 256 | cut -c1-12)
+  elif command -v sha256sum >/dev/null 2>&1; then
+    digest=$(printf '%s' "$dir" | sha256sum | cut -c1-12)
+  else
+    printf '%s\n' 'shasum または sha256sum が必要です' >&2
+    return 1
+  fi
+  candidate="$(printf '%s' "$label" | LC_ALL=C tr -cs 'a-zA-Z0-9_-' '_' | cut -c1-32)-$digest"
+  # hash側を優先し、作成済みの新セッションから旧セッションへ戻らない。
+  for existing in "$candidate" "$label"; do
+    if tmux has-session -t "=$existing" 2>/dev/null; then
+      local origin
+      origin=$(tmux display-message -p -t "=$existing:" '#{session_path}' 2>/dev/null)
+      origin=$(cd "$origin" 2>/dev/null && pwd -P) || origin=""
+      if [ "$origin" = "$dir" ]; then
+        printf '%s\n' "$existing"
+        return
+      elif [ "$existing" = "$candidate" ]; then
+        printf '%s\n' "別ディレクトリのセッションIDと衝突しました: $candidate" >&2
+        return 1
+      fi
+    fi
+  done
+  printf '%s\n' "$candidate"
 }
 
 # 呼び出し元の端末アプリを判定して ghostty / terminal を返す
@@ -36,22 +86,27 @@ _ws_detect_terminal() {
 # セッションの色設定（tmux コマンド列）
 _ws_style_cmd() {
   local session_name="$1" color="$2"
-  local cmd="tmux set-option -t '=$session_name' status-style 'bg=$color,fg=#c0caf5'"
-  cmd="$cmd; tmux set-option -t '=$session_name' pane-active-border-style 'fg=$color'"
-  cmd="$cmd; tmux set-option -t '=$session_name' pane-border-style 'fg=#3b4261'"
-  echo "$cmd"
+  local target=$(_ws_shell_quote "=$session_name:")
+  printf '%s\n' "tmux set-option -t $target status-style 'bg=$color,fg=#c0caf5' && tmux set-option -t $target pane-active-border-style 'fg=$color' && tmux set-option -t $target pane-border-style 'fg=#3b4261'"
 }
 
 # 新しいウィンドウで実行するシェルコマンド（既存セッションなら attach、なければ作って nvim 起動）
 _ws_attach_cmd() {
   local dir="$1" session_name="$2" style="$3"
-  echo "cd '$dir' && if tmux has-session -t '=$session_name' 2>/dev/null; then $style; tmux attach-session -t '=$session_name'; else tmux new-session -d -s '$session_name'; $style; tmux send-keys -t '$session_name' 'v' Enter; tmux attach-session -t '=$session_name'; fi"
+  local quoted_dir=$(_ws_shell_quote "$dir") name=$(_ws_shell_quote "$session_name")
+  local target=$(_ws_shell_quote "=$session_name:")
+  local pane=$(_ws_shell_quote "=$session_name:")
+  # tmux formatの特殊文字はエスケープ。表示名にはhashを出さない。
+  local label=$(basename "$dir")
+  label="${label//\#/##}"
+  label=$(_ws_shell_quote "#[bold] $label #[nobold]")
+  printf '%s\n' "cd $quoted_dir && if tmux has-session -t $target 2>/dev/null; then true; else tmux new-session -d -s $name -c $quoted_dir && tmux send-keys -t $pane 'nvim' Enter; fi && $style && tmux set-option -t $target status-left $label && tmux attach-session -t $target"
 }
 
 # Terminal.app の新しいウィンドウで実行（従来の挙動そのまま）
 _ws_script_terminal() {
-  local cmd="$1"
-  echo "
+  local cmd=$(_ws_applescript_quote "$1")
+  printf '%s\n' "
     tell application \"Terminal\"
       do script \"$cmd\"
       activate
@@ -62,8 +117,8 @@ _ws_script_terminal() {
 # Ghostty の新しいウィンドウで実行（Ghostty 1.3+ の AppleScript を使う）
 # 未起動なら起動時に開く最初のウィンドウに流し込む（ウィンドウが 2 枚開くのを防ぐ）
 _ws_script_ghostty() {
-  local cmd="$1" dir="$2"
-  echo "
+  local cmd=$(_ws_applescript_quote "$1") dir=$(_ws_applescript_quote "$2")
+  printf '%s\n' "
     if application \"Ghostty\" is running then
       tell application \"Ghostty\"
         new window with configuration {initial working directory:\"$dir\", initial input:\"$cmd\" & linefeed}
@@ -88,17 +143,20 @@ _ws_script_ghostty() {
 _ws_switch_in_tmux() {
   local dir="$1" session_name="$2" color="$3"
   if [ -n "${WS_DRY_RUN:-}" ]; then
-    echo "[dry-run] tmux: new-session -d -s '$session_name' -c '$dir'（未作成時）+ send-keys 'v' → 色設定 → switch-client -t '=$session_name'"
+    printf '%s\n' "[dry-run] tmux: new-session -d -s '$session_name' -c '$dir'（未作成時）→ switch-client -t '=$session_name'"
     return
   fi
-  if ! tmux has-session -t "=$session_name" 2>/dev/null; then
-    tmux new-session -d -s "$session_name" -c "$dir"
-    tmux send-keys -t "$session_name" 'v' Enter
+  if ! tmux has-session -t "=$session_name:" 2>/dev/null; then
+    tmux new-session -d -s "$session_name" -c "$dir" || return
+    tmux send-keys -t "=$session_name:" 'nvim' Enter || return
   fi
-  tmux set-option -t "=$session_name" status-style "bg=$color,fg=#c0caf5"
-  tmux set-option -t "=$session_name" pane-active-border-style "fg=$color"
-  tmux set-option -t "=$session_name" pane-border-style "fg=#3b4261"
-  tmux switch-client -t "=$session_name"
+  tmux set-option -t "=$session_name:" status-style "bg=$color,fg=#c0caf5"
+  tmux set-option -t "=$session_name:" pane-active-border-style "fg=$color"
+  tmux set-option -t "=$session_name:" pane-border-style "fg=#3b4261"
+  local label=$(basename "$dir")
+  label="${label//\#/##}"
+  tmux set-option -t "=$session_name:" status-left "#[bold] $label #[nobold]"
+  tmux switch-client -t "=$session_name:"
 }
 
 # ワークスペースセレクター
@@ -141,12 +199,17 @@ ws() {
     echo "ディレクトリがありません: $selected"
     return 1
   fi
-  selected="${selected%/}"
+  selected=$(cd "$selected" && pwd -P) || return
+
+  if ! command -v tmux >/dev/null 2>&1; then
+    printf '%s\n' 'tmux が必要です: brew install tmux' >&2
+    return 1
+  fi
 
   local session_name
-  session_name=$(basename "$selected")
+  session_name=$(_ws_session_name "$selected") || return
   local color
-  color=$(_ws_color "$session_name")
+  color=$(_ws_color "$selected")
 
   if [ -n "${TMUX:-}" ] && [ -n "${WS_SWITCH:-}" ]; then
     _ws_switch_in_tmux "$selected" "$session_name" "$color"
@@ -164,7 +227,7 @@ ws() {
 
   if [ -n "${WS_DRY_RUN:-}" ]; then
     echo "[dry-run] terminal=$terminal"
-    echo "$script"
+    printf '%s\n' "$script"
     return
   fi
   osascript -e "$script"

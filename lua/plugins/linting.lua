@@ -1,5 +1,5 @@
 -- ==========================================================
--- Linting: 保存時の静的解析
+-- Linting: 保存時の静的解析。外部ツールが無ければスキップ (R-21)
 -- ==========================================================
 
 return {
@@ -21,7 +21,13 @@ return {
         callback = function()
           local linters = lint.linters_by_ft[vim.bo.filetype] or {}
           local available = vim.tbl_filter(function(name)
-            return vim.fn.executable(name) == 1
+            local ok, cmd = pcall(function()
+              local def = lint.linters[name]
+              if type(def) == "function" then def = def() end
+              if type(def) ~= "table" then return nil end
+              return type(def.cmd) == "function" and def.cmd() or def.cmd
+            end)
+            return ok and type(cmd) == "string" and vim.fn.executable(cmd) == 1
           end, linters)
           if #available > 0 then
             lint.try_lint(available)

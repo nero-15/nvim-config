@@ -8,7 +8,9 @@ local project = require("workflow.project")
 
 local M = {}
 
-M.cmd = "claude --dangerously-skip-permissions"
+-- 直近の端末は Neovim。外側の TMUX を継承すると Claude がコピー時に
+-- tmux 用 DCS を出し、内蔵端末に Base64 が露出する (R-09)。子プロセスだけ外す。
+M.cmd = "env -u TMUX -u TMUX_PANE claude --dangerously-skip-permissions"
 
 local WIN = { position = "right", width = 0.4 }
 local slot = 0

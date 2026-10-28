@@ -15,7 +15,9 @@ local function render_mermaid(file)
     vim.notify("mmdc がありません: npm install -g @mermaid-js/mermaid-cli", vim.log.levels.WARN)
     return
   end
-  local out = vim.fn.stdpath("cache") .. "/mermaid/" .. vim.fn.fnamemodify(file, ":t:r") .. ".svg"
+  -- worktree 別の同名ファイルと、並行レンダリングの出力を分離する (R-02, R-05)。
+  local cache = vim.fn.stdpath("cache") .. "/mermaid/" .. vim.fn.sha256(file):sub(1, 16)
+  local out = cache .. "/" .. vim.fn.sha256(vim.fn.tempname()) .. ".svg"
   vim.fn.mkdir(vim.fn.fnamemodify(out, ":h"), "p")
   vim.system({ "mmdc", "-i", file, "-o", out, "-b", "white" }, { text = true }, function(result)
     vim.schedule(function()
@@ -37,7 +39,11 @@ function M.open()
   elseif LIVE_FILETYPES[ft] or ext == "svg" then
     vim.cmd("LivePreview start")
   elseif ft == "mermaid" then
-    vim.cmd("silent! write")
+    local saved, err = pcall(vim.cmd, "silent write")
+    if not saved then
+      vim.notify("保存できないためプレビューを中止しました:\n" .. tostring(err), vim.log.levels.ERROR)
+      return
+    end
     render_mermaid(file)
   elseif OPEN_EXTENSIONS[ext] then
     vim.ui.open(file)

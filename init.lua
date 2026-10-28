@@ -32,8 +32,10 @@ end
 vim.opt.rtp:prepend(lazypath)
 
 require("lazy").setup("plugins", {
-  change_detection = { notify = false },
-  install = { colorscheme = { "tokyonight" } },
+  -- setup.sh の再現用インストールだけは自動installと実lockの更新を抑える。
+  lockfile = vim.g.nvim_setup_lockfile or (vim.fn.stdpath("config") .. "/lazy-lock.json"),
+  change_detection = { notify = false, enabled = not vim.g.nvim_setup_restore },
+  install = { colorscheme = { "tokyonight" }, missing = not vim.g.nvim_setup_restore },
   checker = { enabled = false }, -- 更新は :Lazy で明示的に行う (lazy-lock.json で固定)
   performance = {
     rtp = {

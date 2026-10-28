@@ -51,6 +51,31 @@ Vim の操作は **「動詞 + 対象」** の組み合わせ。覚えるのは�
 - レビュー: `<Space>gd`（全体）→ `]h` で hunk を巡回 → `<Space>ghs` で stage
 - 停止条件: `<Space>vv` → 赤なら `]q` で直接飛ぶ
 
+### 複数エージェントの成果を確認する
+
+- `<Space>ss`（Spec Hub）は Markdown に加えて `docs/**/*.html`・`docs/**/*.mmd` も一覧する。最近の調査HTMLを選び、`<Space>mp` でブラウザ表示できる。`<Space>sg` の仕様検索も同じ形式を対象にする。
+- スキルの入口は `.claude/skills/`・`.agents/skills/`・`.codex/skills/` 内の `SKILL.md`。which-key の `<Space>s` から辿れる。
+- `<Space>vv` は保存してから実行する。保存できないバッファがある場合は中止するので、保存先や権限を確認する。
+- 実行中に `<Space>gw` で別 worktree へ移っても、診断は開始した worktree のファイルを指す。分割されて届いたログも改行までつないで解析する。
+- `<Space>vl`（`:VerifyLog`）で実行元・コマンド・開始終了時刻・HEAD・終了コードを見る。HEADが実行中に変わったら再検証する。未コミット編集はHEADでは区別できないため、エージェントがさらに編集した後は再実行する。
+- 単独の `.mmd` は保存成功後に変換する。同名の図を複数worktreeで開いても、プレビューの出力は混ざらない。
+- `ws` は正規化したフルパスでセッションを区別する。`client-a/api` と `client-b/api` は別セッションになり、シンボリックリンク経由では同じセッションへ戻る。従来の短い名前のセッションも作成元が一致するときだけ再利用し、既存セッションは削除しない。シェルを開き直すか、このリポジトリの `aliases.sh` を `source` すると反映される。
+
+### Ghostty 1.4 の運用
+
+- `bash setup.sh --upgrade-ghostty` は Homebrew 管理の Ghostty だけを更新する。シェル設定やプラグインの更新は伴わない。`bash setup.sh --check-ghostty` で版と設定を検査できる。
+- スクロールバック圧縮・非表示タブの省メモリは1.4の既定値を使う。tmuxとNeovim自身の履歴は別なので、履歴を無制限に増やさない。
+- SSH接続は必要なときに `ghostty +ssh user@host`。自動aliasは設定しない。
+- `⌘↑` / `⌘↓` はプロンプト間移動。選択時のシステムクリップボードへのコピーは既存設定のまま。
+- Ghostty更新は次のアプリ起動に、Neovim設定は新しく起動するNeovimに反映される。作業中のエージェントを終了させず、区切りで再起動する。
+
+### Claude の会話を選択・コピーする
+
+- `<Space>ac`（メイン）と `<Space>an`（追加）で起動した Claude は、通常のドラッグ選択・コピーを使える。
+- Neovim 内の Claude には外側の `TMUX` / `TMUX_PANE` を渡さない。tmux 用のコピー制御コードが内蔵端末で Base64 の文字列として露出するのを防ぐ（R-09）。Neovim 本体や外側の tmux の設定は変えない。
+- この設定変更は起動済みの Claude には反映されない。作業の区切りで Claude を終了し、Neovim を起動し直して `<Space>ar`（resume）で会話を再開する。追加セッションは `<Space>an` で起動後に `/resume` を使う。
+- 再起動までの一時回避は、Claude の `/config` で **Copy on select** をオフにし、`Shift` を押しながらドラッグして Ghostty 側で選択・コピーする。Neovim の複数ウィンドウをまたがないよう注意する。
+
 ---
 
 各 Stage のキーマップは which-key（`<Space>` を押して待つ）からも辿れる。

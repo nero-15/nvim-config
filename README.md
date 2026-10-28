@@ -21,6 +21,8 @@ bash setup.sh
 
 その後 Ghostty を開き、`ws` でプロジェクトを選ぶ。**慣れるまでは `<Space>L` のレッスンから。**
 
+Ghosttyだけを更新する場合は `bash setup.sh --upgrade-ghostty`（Homebrew管理の既存インストールが対象）。確認だけなら `bash setup.sh --check-ghostty`。通常のセットアップではプラグインを `lazy-lock.json` の版に復元し、更新操作とは分ける。
+
 ## 学ぶ
 
 | 入口 | 内容 |
@@ -49,6 +51,7 @@ flowchart LR
 | `:Spec` | `<Space>ss` | 規約・引継・計画・文書・スキル・QA の一覧 |
 | `:Worktrees` | `<Space>gw` | worktree を新しいタブで開く / 差分レビュー / そこで Claude |
 | `:Verify` | `<Space>vv` | `make verify` / `pnpm verify` を実行 → quickfix |
+| `:VerifyLog` | `<Space>vl` | 実行元・HEAD・時刻・終了コード・全出力を確認 |
 | `:ClaudeNew` | `<Space>an` | Claude を追加で起動（並走） |
 | `:Preview` | `<Space>mp` | Markdown / Mermaid / HTML をブラウザでプレビュー |
 

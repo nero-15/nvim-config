@@ -155,7 +155,45 @@ test("lessons: list, open copy, progress", function()
   assert(vim.api.nvim_get_commands({}).Lesson, "missing :Lesson")
 end)
 
+-- ── Claude のコピー (R-09) ──
+test("Claude clipboard does not leak Base64 into terminal", function()
+  local result = vim.system({ vim.v.progpath, "--clean", "--headless", "-l",
+    vim.fn.stdpath("config") .. "/scripts/claude-clipboard.lua" }, { text = true }):wait(15000)
+  assert(result.code == 0, (result.stderr or "") .. (result.stdout or ""))
+end)
+
 -- ── 結果 ──
+test("editor workflow regressions", function()
+  local result = vim.system({ vim.v.progpath, "--clean", "--headless", "-l",
+    vim.fn.stdpath("config") .. "/scripts/editor-regression.lua" }, { text = true }):wait(15000)
+  assert(result.code == 0, (result.stderr or "") .. (result.stdout or ""))
+end)
+
+test("Verify keeps diagnostics and evidence in the originating worktree", function()
+  local result = vim.system({ vim.v.progpath, "--clean", "--headless", "-l",
+    vim.fn.stdpath("config") .. "/scripts/workflow-verify.lua" }, { text = true }):wait(15000)
+  assert(result.code == 0, (result.stderr or "") .. (result.stdout or ""))
+end)
+
+test("verification harness rejects false green", function()
+  local result = vim.system({ "bash", vim.fn.stdpath("config") .. "/scripts/verify-regression.sh" }, { text = true }):wait(15000)
+  assert(result.code == 0, (result.stderr or "") .. (result.stdout or ""))
+end)
+
+test("setup preserves links and restores pinned plugins", function()
+  local result = vim.system({ "bash", vim.fn.stdpath("config") .. "/scripts/terminal-tests.sh" }, { text = true }):wait(30000)
+  assert(result.code == 0, (result.stderr or "") .. (result.stdout or ""))
+end)
+
+test("ws isolates projects and preserves existing sessions", function()
+  for _, shell in ipairs({ "bash", "zsh" }) do
+    if vim.fn.executable(shell) == 1 then
+      local result = vim.system({ shell, vim.fn.stdpath("config") .. "/scripts/ws-regression.sh" }, { text = true }):wait(15000)
+      assert(result.code == 0, shell .. ": " .. (result.stderr or "") .. (result.stdout or ""))
+    end
+  end
+end)
+
 local total = results.passed + #results.failed
 io.write(string.format("smoke: %d/%d passed\n", results.passed, total))
 for _, f in ipairs(results.failed) do

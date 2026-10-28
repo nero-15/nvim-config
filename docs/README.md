@@ -14,6 +14,9 @@
 | 05 | [学習ロードマップ](05-learning-path.md) | Vim を学び直す道筋 |
 | — | [ADR](adr/) | 採用・不採用の判断の記録 |
 | — | [tasks](tasks.md) | セッションをまたぐ引き継ぎ（外部メモリ） |
+| — | [エージェント環境の調査と提案（2026-10-27）](research-2026-10-27-agent-engineering.md) | ハーネス・ループ・グラフ、共有記事の検証、個人環境から始める導入案 |
+| — | [はじめてのハーネス・ループ・グラフ（HTML）](agent-engineering-beginner.html) | 一つの調査資料作成例で読む、図解付きの入門資料 |
+| — | [グラフで、AIの仕事をどう設計するか（HTML）](agent-engineering-practical.html) | 入門と詳細調査の中間。最近の動向、状態・受け渡し・検証・再開を実際の開発例で説明 |
 
 ## ADR 一覧
 
@@ -23,3 +26,4 @@
 | [0002](adr/0002-terminal-and-image-protocol.md) | ターミナルアプリと画像表示（Ghostty） | Accepted |
 | [0003](adr/0003-multiplexer-strategy.md) | 画面分割のレイヤーを Neovim に寄せ、tmux は裏方に | Accepted |
 | [0004](adr/0004-plugin-selection-2026.md) | 2026 年 9 月時点のプラグイン選定 | Accepted |
+| [0005](adr/0005-ghostty-1.4-and-workflow.md) | Ghostty 1.4と再現可能なエージェント開発環境 | Accepted |
