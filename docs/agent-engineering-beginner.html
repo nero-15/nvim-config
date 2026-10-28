@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="ハーネス、ループ、グラフを、AIに調査資料を作ってもらう一つの例で理解する入門資料。個人の開発環境への取り入れ方まで。">
+  <title>AIに仕事を任せるための、3つの設計｜はじめてのハーネス・ループ・グラフ</title>
+  <style>
+    :root{color-scheme:light dark;--bg:#f5f6f9;--paper:#fff;--ink:#17253c;--muted:#526078;--line:#dbe1ea;--blue:#2359b6;--blue-bg:#edf3ff;--orange:#935209;--orange-bg:#fff3e4;--green:#206a50;--green-bg:#eaf6ef;--dark:#152b47;--on-dark:#f5f8ff;--radius:18px}
+    *{box-sizing:border-box}html{scroll-behavior:smooth;scroll-padding-top:24px}body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Hiragino Kaku Gothic ProN","Yu Gothic",Meiryo,sans-serif;font-size:17px;line-height:1.9;overflow-wrap:anywhere}
+    a{color:var(--blue);text-underline-offset:4px}a:focus-visible{outline:3px solid var(--blue);outline-offset:5px}.skip{position:absolute;left:16px;top:-100px;background:var(--paper);padding:10px}.skip:focus{top:10px}
+    main{max-width:1000px;margin:auto;padding:56px 36px 72px}.eyebrow{font-size:13px;letter-spacing:.12em;font-weight:700;color:var(--blue)}h1{font-size:clamp(32px,5vw,50px);line-height:1.45;letter-spacing:-.025em;margin:14px 0 20px}h2{font-size:clamp(25px,3.8vw,32px);line-height:1.5;margin:12px 0 22px}h3{font-size:20px;line-height:1.6;margin:0 0 10px}p{margin:12px 0 18px}.lead{max-width:740px;font-size:19px}.muted{color:var(--muted)}.small{font-size:14px}.section{margin-top:68px;padding-top:28px;border-top:1px solid var(--line)}.section-no{font-size:13px;letter-spacing:.12em;color:var(--muted)}
+    nav{display:flex;flex-wrap:wrap;gap:8px 20px;margin:28px 0;font-size:14px}nav a{color:var(--muted)}.paper{background:var(--paper);border:1px solid var(--line);border-radius:var(--radius);padding:28px;margin:24px 0}.example{border-left:4px solid var(--blue);padding:12px 20px;background:var(--blue-bg);margin:24px 0}.example p:last-child{margin-bottom:4px}.label{font-size:13px;font-weight:700;letter-spacing:.04em;display:block;margin-bottom:6px}
+    .three{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}.concept{border-radius:var(--radius);padding:24px;background:var(--paper)}.concept b{display:block;font-size:23px;margin:7px 0}.concept p{margin:6px 0;font-size:15px}.harness{background:var(--blue-bg);color:var(--blue)}.loop{background:var(--orange-bg);color:var(--orange)}.graph{background:var(--green-bg);color:var(--green)}.concept .meaning{color:var(--ink)}
+    .flow{display:flex;align-items:stretch;justify-content:center;gap:10px;margin:24px 0}.node{flex:1;min-width:0;background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:18px 12px;text-align:center}.node strong{display:block;font-size:18px}.node small{display:block;color:var(--muted);font-size:14px;margin-top:4px}.arrow{align-self:center;flex:none;color:var(--muted);font-size:24px}.arrow::before{content:'→'}.node.active{border-color:var(--orange);background:var(--orange-bg)}
+    figure{margin:24px 0}figcaption{color:var(--muted);font-size:14px;margin-top:14px}.workbench{border:2px solid var(--blue);background:var(--blue-bg);border-radius:var(--radius);padding:24px}.workbench>h3{color:var(--blue)}.tool-row{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.tool{background:var(--paper);padding:15px 18px;border-radius:10px;font-size:15px}.tool strong{display:block;margin-bottom:3px}.workbench .node{max-width:360px;margin:20px auto 0}
+    .return{margin:-12px 0 0;padding:12px 20px;background:var(--orange-bg);color:var(--orange);border-radius:10px;text-align:center;font-weight:600}.finish{margin-top:12px;text-align:center;color:var(--green)}.fork{display:grid;grid-template-columns:1fr 1fr;gap:20px}.fork .node{background:var(--green-bg);border-color:var(--green)}.vertical{max-width:600px;margin:0 auto;text-align:center}.vertical>.node{max-width:380px;margin:auto}.down{color:var(--muted);font-size:23px;line-height:1.4;padding:8px}.branch-label{font-size:13px;color:var(--green);margin-bottom:9px}.join{font-size:14px;color:var(--muted);margin:10px 0}
+    .answer{font-size:20px;font-weight:600;margin:24px 0}.note{border-top:1px solid var(--line);padding-top:16px;font-size:15px;color:var(--muted)}.roles{display:grid;grid-template-columns:1fr 1fr;gap:18px}.roles section{background:var(--paper);padding:24px;border-radius:var(--radius);border:1px solid var(--line)}ul,ol{padding-left:1.4em}li{margin:9px 0}.steps{list-style:none;padding:0;counter-reset:steps}.steps li{position:relative;padding:4px 0 22px 50px;border-bottom:1px solid var(--line);margin-bottom:22px;counter-increment:steps}.steps li::before{content:counter(steps);position:absolute;left:0;top:4px;background:var(--dark);color:var(--on-dark);width:32px;height:32px;text-align:center;line-height:32px;border-radius:50%;font-size:15px}.steps strong{display:block;font-size:19px}.steps p{margin:6px 0;font-size:16px}.status{display:inline-block;font-size:12px;color:var(--muted);border:1px solid var(--line);padding:2px 8px;border-radius:5px;margin-left:6px;font-weight:400}
+    pre{white-space:pre-wrap;overflow-wrap:anywhere;background:var(--dark);color:var(--on-dark);border-radius:var(--radius);padding:26px;font-size:15px;line-height:1.9;font-family:inherit}.measure{background:var(--green-bg);border-radius:var(--radius);padding:26px}.measure strong{font-size:22px;display:block}.summary{padding:28px;background:var(--dark);color:var(--on-dark);border-radius:var(--radius)}.summary p{margin:8px 0}.summary b{display:inline-block;min-width:7em}dl{display:grid;grid-template-columns:160px 1fr;gap:12px 20px}dt{font-weight:600}dd{margin:0;color:var(--muted)}footer{margin-top:64px;padding-top:24px;border-top:1px solid var(--line);font-size:14px;color:var(--muted)}footer li{margin:8px 0}
+    @media(prefers-color-scheme:dark){:root{--bg:#111b29;--paper:#192638;--ink:#e7edf6;--muted:#b2c0d2;--line:#35445b;--blue:#a1c1ff;--blue-bg:#1b304c;--orange:#f0c28b;--orange-bg:#3d2d1b;--green:#94d6b4;--green-bg:#1c352d;--dark:#0b1423;--on-dark:#f5f8ff}}
+    @media(max-width:660px){main{padding:32px 20px 48px}body{font-size:16px}.lead{font-size:17px}.three,.tool-row,.roles{grid-template-columns:1fr}.concept{padding:18px 22px}.concept b{font-size:21px}.section{margin-top:48px}.paper,.workbench{padding:20px}.flow{flex-direction:column;gap:8px}.arrow::before{content:'↓'}.node{width:100%}.fork{gap:10px}.fork .node{padding:15px 8px}.fork .node strong{font-size:16px}.fork .node small{font-size:13px}dl{grid-template-columns:1fr;gap:4px}dd{margin-bottom:12px}pre{padding:20px;font-size:14px}.measure strong{font-size:19px}.summary b{display:block}}
+    @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+    @media print{:root{color-scheme:light;--bg:#fff;--paper:#fff;--ink:#17253c;--muted:#526078;--line:#dbe1ea;--blue:#2359b6;--blue-bg:#edf3ff;--orange:#935209;--orange-bg:#fff3e4;--green:#206a50;--green-bg:#eaf6ef;--dark:#edf1f6;--on-dark:#17253c}body{font-size:12pt}main{max-width:none;padding:0}nav,.skip{display:none}h1{font-size:29pt}h2{font-size:22pt}.section{margin-top:28px}figure,.concept,.steps li,pre,.measure{break-inside:avoid}a{color:inherit}.paper{padding:18px}.three{gap:10px}h2,h3{break-after:avoid}}
+  </style>
+</head>
+<body>
+<a class="skip" href="#first">本文へ進む</a>
+<main>
+  <header>
+    <span class="eyebrow">はじめての AGENT ENGINEERING</span>
+    <h1>AIに仕事を任せるための、<br>3つの設計。</h1>
+    <p class="lead">「ハーネス」「ループ」「グラフ」。難しく見えますが、考えることは<strong>仕事の準備・やり直し・分担</strong>です。一つの例を使って、順に見ていきましょう。</p>
+    <p class="small muted">対象：自分とAIのチームで、良い成果を増やしたい人 ／ 作成：2026年10月28日</p>
+    <p class="small"><a href="agent-engineering-practical.html">次に読む実務版：最近のグラフと、実際の仕事の設計へ →</a></p>
+    <nav aria-label="目次"><a href="#first">まずAIエージェントとは</a><a href="#harness">ハーネス</a><a href="#loop">ループ</a><a href="#graph">グラフ</a><a href="#yours">自分の環境で始める</a></nav>
+    <div class="three" aria-label="3つの言葉の意味">
+      <div class="concept harness"><span class="label">HARNESS</span><b>仕事の準備</b><p class="meaning">何を使って、どんなルールで働く？</p></div>
+      <div class="concept loop"><span class="label">LOOP</span><b>確認とやり直し</b><p class="meaning">うまくいかなかったら、どう直す？</p></div>
+      <div class="concept graph"><span class="label">GRAPH</span><b>仕事の分担と順番</b><p class="meaning">誰が何を担当し、何を待つ？</p></div>
+    </div>
+  </header>
+
+  <section id="first" class="section">
+    <span class="section-no">START ／ 前提はここだけ</span>
+    <h2>AIエージェントは、<br>道具を使いながら仕事を進めるAI。</h2>
+    <p>チャットで質問すると、AIは文章を返します。その中心で文章や次の行動を考える部分が<strong>AIモデル</strong>です。モデルに道具と実行の仕組みを組み合わせると、検索したり、ファイルを読んだり、資料を書いたりする<strong>エージェント</strong>として動かせます。結果を見て、次に何をするかも選びます。</p>
+    <figure>
+      <div class="flow"><div class="node"><strong>あなた</strong><small>目的を伝える</small></div><span class="arrow" aria-hidden="true"></span><div class="node"><strong>AI＋道具</strong><small>調べる・作る・確かめる</small></div><span class="arrow" aria-hidden="true"></span><div class="node"><strong>成果物</strong><small>資料や修正済みのコード</small></div></div>
+      <figcaption>AIが「次に何をするか」を考え、接続された道具が実際の操作を行います。</figcaption>
+    </figure>
+    <div class="example"><span class="label">この資料でずっと使う例</span><h3>「会社で使うAIツールを比較して、導入判断の資料を1ページ作って」</h3><p>公式情報を調べ、機能と費用を比べ、出典付きの資料を作る仕事です。</p></div>
+    <p>これを安心して任せるには、「お願い」と伝えるだけでなく、<strong>仕事が進む仕組み</strong>を用意します。それが、これから説明する3つの設計です。</p>
+  </section>
+
+  <section id="harness" class="section">
+    <span class="section-no">01 ／ 仕事の準備</span>
+    <h2>ハーネスは、AIの「作業環境」。</h2>
+    <p>人に仕事を頼むときも、資料、道具、ルール、保存場所を渡します。AIにも同じ準備が必要です。<strong>AIの周りで、実行を支える仕組み全体</strong>をハーネスと呼びます。</p>
+    <figure class="workbench">
+      <h3>AIが働くための環境＝ハーネス</h3>
+      <div class="tool-row">
+        <div class="tool"><strong>道具</strong>公式サイトの検索・資料の読み書き</div>
+        <div class="tool"><strong>ルールと権限</strong>下書きは作れる。社外公開は別の判断。</div>
+        <div class="tool"><strong>進捗と記憶</strong>調べた出典・決定事項・次にやること</div>
+        <div class="tool"><strong>確認と停止</strong>出典を照合する。予算に達したら止まる。</div>
+      </div>
+      <div class="node"><strong>AI</strong><small>この環境の中で、仕事を進める</small></div>
+      <figcaption>「何を使えるか」「何を残すか」「どこまで進めてよいか」を用意します。</figcaption>
+    </figure>
+    <p class="answer">今回の例なら：検索できるようにし、資料の保存先と、出典を確認する手順を決める。</p>
+    <p class="note">指示文もハーネスの一部です。ただし、本当に操作や費用を制限したい場合は、ツールの権限や実行側の制御も必要です。文章に「禁止」と書くだけで、すべてを保証できるわけではありません。</p>
+  </section>
+
+  <section id="loop" class="section">
+    <span class="section-no">02 ／ 確認とやり直し</span>
+    <h2>ループは、「作って、確かめて、直す」。</h2>
+    <p>一度で良い資料ができるとは限りません。そこで、完成の条件と比べて、不足があれば修正します。<strong>この繰り返しがループ</strong>です。</p>
+    <figure class="paper">
+      <div class="flow"><div class="node active"><strong>作る</strong><small>比較資料を書く</small></div><span class="arrow" aria-hidden="true"></span><div class="node active"><strong>確かめる</strong><small>価格の出典はある？</small></div><span class="arrow" aria-hidden="true"></span><div class="node active"><strong>判定する</strong><small>条件を満たした？</small></div></div>
+      <div class="return">不足あり ↩ 出典を調べ直して、資料を修正</div>
+      <div class="finish">条件を満たしたら → 完成候補としてあなたへ</div>
+      <figcaption>例：価格の出典が抜けていた → 公式情報を確認 → 資料に追記 → 再確認。</figcaption>
+    </figure>
+    <p>大事なのは「何回も考えさせる」ことより、<strong>良くなったかを確かめる基準</strong>です。「いい感じ」より、「比較対象が揃っている」「価格に出典と確認日がある」の方が判断できます。</p>
+    <p class="answer">今回の例なら：出典が足りない資料を、そのまま完成にせず、調べ直す。</p>
+    <p class="note">終わり方も決めます。たとえば「3回直しても解決しなければ、不明点をまとめて本人に戻す」。回数や時間を厳密に守るには、実行側にも上限を設定します。</p>
+  </section>
+
+  <section id="graph" class="section">
+    <span class="section-no">03 ／ 仕事の分担と順番</span>
+    <h2>グラフは、「仕事のつながりを描いた図」。</h2>
+    <p>ここでのグラフは、棒グラフや折れ線グラフではありません。<strong>箱が作業、矢印が作業同士のつながり</strong>です。どれを同時に進め、どの結果を待つかを決めます。</p>
+    <figure class="paper">
+      <div class="vertical">
+        <div class="node"><strong>あなたが比較条件を決める</strong><small>用途・対象ツール・必要な項目</small></div>
+        <div class="down" aria-hidden="true">↓</div>
+        <div class="branch-label">ここは同時に進められる</div>
+        <div class="fork"><div class="node"><strong>調査担当A</strong><small>ツールAの公式情報</small></div><div class="node"><strong>調査担当B</strong><small>ツールBの公式情報</small></div></div>
+        <div class="join">↓ 両方の結果を待って合流 ↓</div>
+        <div class="node"><strong>資料を作る担当</strong><small>同じ項目で比較して、1ページにする</small></div>
+        <div class="down" aria-hidden="true">↓</div>
+        <div class="node"><strong>別の確認担当</strong><small>資料と公式の出典を照らし合わせる</small></div>
+        <div class="down" aria-hidden="true">↓</div>
+        <div class="node"><strong>あなたが採用を判断</strong><small>目的に合うか、未確認は何か</small></div>
+      </div>
+      <figcaption>調査AとBは並列。比較資料の作成は両方の結果を待ちます。確認で問題があれば、該当する担当へ戻します。</figcaption>
+    </figure>
+    <p class="answer">今回の例なら：2つの調査を同時に進め、結果が揃ってから資料を作る。</p>
+    <p>同じファイルを同時に編集する仕事は、ぶつかることがあります。「別々にできるか」「どこへ保存するか」「最後に誰がまとめるか」まで決めて分担します。</p>
+    <p class="note">箱の中身は、AIでも、普通のプログラムでも、人の確認でも構いません。小さな仕事なら担当を増やす必要はありません。また、社内知識の関係をつなぐ「ナレッジグラフ」は別の話です。今は仕事の流れに絞って理解すれば十分です。</p>
+  </section>
+
+  <section id="together" class="section">
+    <span class="section-no">04 ／ 3つは一緒に使う</span>
+    <h2>準備して、分担して、<br>それぞれの仕事を確かめる。</h2>
+    <div class="summary">
+      <p><b>ハーネス</b>検索・保存・権限・記録など、仕事全体を支える。</p>
+      <p><b>グラフ</b>調査A・調査B・資料作成・確認をつなぐ。</p>
+      <p><b>ループ</b>各担当が、確認結果を見て修正する。</p>
+    </div>
+    <p>「ハーネスが古くなったからループへ、ループが古くなったからグラフへ」という関係ではありません。<strong>それぞれ違う部分を設計しています。</strong></p>
+    <div class="roles">
+      <section><h3>AIに任せること</h3><ul><li>情報を集める</li><li>成果物を作る</li><li>決めた条件で確認する</li><li>不足を直し、結果を記録する</li></ul></section>
+      <section><h3>あなたが決めること</h3><ul><li>何のために作るのか</li><li>何を満たせば使えるのか</li><li>どれだけ時間・費用を使えるか</li><li>成果を採用するか</li></ul></section>
+    </div>
+    <p>確認役を分けても、正しさが自動的に保証されるわけではありません。確認役が<strong>実際の出典やテスト結果</strong>を見られることが大切です。</p>
+  </section>
+
+  <section id="yours" class="section">
+    <span class="section-no">05 ／ あなたの環境で始めるなら</span>
+    <h2>まずは「作る担当＋確認する担当」。</h2>
+    <p>今のプロジェクトには、目的を書いた文書、検証の手順、作る担当と確認担当を分けるルール、引き継ぎ記録があります。<strong>すでに土台はあります。</strong>最初は、これらを一つの作業で確実に使えるようにつなぎます。</p>
+    <ol class="steps">
+      <li><strong>「完成」の条件を先に書く</strong><p>資料なら「出典付きの比較表」。コード修正なら「この操作ができ、必要なテストが通る」。AIが何を証明すればよいかを決めます。</p></li>
+      <li><strong>作る担当と確認担当を分ける</strong><p>確認担当には、完成条件と成果物を渡します。作った担当の「できました」だけで判断せず、原本や実行結果を確認してもらいます。</p></li>
+      <li><strong>翌日も続けられる記録を残す</strong><p>どのプロジェクトの、何の作業か。成果物はどこか。何を確認済みで、次は何をするか。この4点を残します。</p></li>
+      <li><strong>独立した仕事が増えたら並列化する <span class="status">次の段階</span></strong><p>調査が2方向あるときなどに、担当を追加します。人数は、必要な仕事と自分の確認能力に合わせます。</p></li>
+    </ol>
+    <div class="example"><span class="label">このプロジェクトでの具体例</span><p><strong>検証：</strong>一般的なチェック手順を、このプロジェクト専用の検証へつなぐ。何を確認したか、どの版を確認したかも残す。</p><p><strong>再開：</strong>単に「一番新しい記録」ではなく、指定したプロジェクトと作業の記録から続ける。</p></div>
+    <h3>次の作業で、まずこう頼む</h3>
+    <pre>目的：［何のための作業か］
+成果物：［作ってほしいもの・保存場所］
+完成条件：［確認できる条件を2〜3個］
+
+まず、作る担当1人で進めてください。
+別の確認担当が、条件と成果物を照合してください。
+問題があれば修正し、再確認してください。
+解決できない点は、未確認として残してください。
+
+最後に、成果物の場所・確認結果・残った課題・
+次にやることを記録してください。</pre>
+    <p class="small muted">これは依頼のひな形です。プロジェクトの既存ルールに合わせて使います。厳密な権限や費用上限は、別途、実行環境で設定します。</p>
+  </section>
+
+  <section id="improve" class="section">
+    <span class="section-no">06 ／ 「昨日より良くする」の意味</span>
+    <h2>失敗を、次回の手順に変える。</h2>
+    <p>たとえば毎回、資料から出典が抜けるなら、次回の手順に「主張と出典の対応表を作る」を追加します。その変更で、抜けが減るかを確かめます。</p>
+    <div class="flow"><div class="node"><strong>記録</strong><small>何に失敗した？</small></div><span class="arrow" aria-hidden="true"></span><div class="node"><strong>手順の改善案</strong><small>どう防ぐ？</small></div><span class="arrow" aria-hidden="true"></span><div class="node"><strong>試して採用</strong><small>本当に減った？</small></div></div>
+    <p>自分の環境では、まず<strong>振り返り→手順の修正→効果の確認</strong>を取り入れればよいでしょう。モデルそのものを毎晩鍛え直すという意味ではありません。</p>
+    <p class="small muted">関連する機能：AnthropicのManaged Agents（クラウドでエージェントを動かすサービス）には、過去の記録と記憶を整理する「Dreams」があります。ここで提案する個人の振り返り手順とは区別してください。</p>
+    <div class="measure"><span class="label">うまくいったかを見る指標</span><strong>自分の確認時間が減り、使える成果が増えたか。</strong><p>説明・確認・修正にかかった自分の時間を測ります。品質や費用も一緒に確認します。AIの人数や、生成した文章の長さだけでは判断しません。</p></div>
+    <p class="answer">まず一つの仕事で試し、うまくいった手順を再利用する。チームに広げるのは、その後です。</p>
+  </section>
+
+  <section class="section" id="glossary">
+    <span class="section-no">REFERENCE ／ 用語を忘れたら</span>
+    <h2>この資料の用語メモ</h2>
+    <dl><dt>エージェント</dt><dd>道具を使い、結果を見ながら次の行動を選ぶAI。</dd><dt>ハーネス</dt><dd>道具、記録、権限など、AIの仕事を支える実行環境。</dd><dt>ループ</dt><dd>作る・確かめる・直す、という繰り返し。</dd><dt>グラフ</dt><dd>作業と、その順番・依存・分担を表すつながり。</dd><dt>スキル</dt><dd>次の仕事でも使えるように保存した手順。</dd><dt>評価</dt><dd>成果が目的や条件を満たすか、証拠を使って確かめること。</dd></dl>
+  </section>
+  <footer>
+    <p>この資料は、2026年10月27日の調査を初学者向けに再構成したものです。図のチーム構成は提案であり、導入や効果測定を済ませたものではありません。</p>
+    <p><strong>根拠と詳しい説明</strong></p>
+    <ul><li><a href="https://www.anthropic.com/research/building-effective-agents">Anthropic：エージェントとワークフローの基本</a></li><li><a href="https://www.langchain.com/blog/3-years-of-graph-engineering-with-langgraph">LangChain：グラフ設計とループの関係</a></li><li><a href="https://platform.claude.com/docs/en/managed-agents/dreams">Anthropic：Dreamsの仕組み</a></li><li><a href="research-2026-10-27-agent-engineering.md">今回の詳しい調査報告・投稿の検証・導入案</a></li></ul>
+    <p>保存したこのHTMLは、インターネット接続なしでも本文と図を読めます。外部の出典リンクを開くときだけ通信します。ブラウザの印刷機能からPDFにもできます。</p>
+  </footer>
+</main>
+</body>
+</html>

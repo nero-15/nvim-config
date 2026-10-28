@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="ハーネスとループから、最近のグラフエンジニアリングへ。用語の意味から一歩進んで、分担、状態、検証、再開の設計を学ぶ実務向け図解。">
+<title>グラフで、AIの仕事をどう設計するか｜ハーネス・ループの次に理解すること</title>
+<style>
+:root{color-scheme:light dark;--bg:#f5f6f9;--paper:#fff;--ink:#19283d;--muted:#55647a;--line:#d8e0eb;--blue:#2358ad;--blue-bg:#edf3ff;--green:#23664e;--green-bg:#edf7f1;--orange:#8b4c08;--orange-bg:#fff3e5;--dark:#172e49;--on-dark:#f6f9ff}
+*{box-sizing:border-box}html{scroll-behavior:smooth;scroll-padding-top:28px}body{margin:0;background:var(--bg);color:var(--ink);font:17px/1.95 -apple-system,BlinkMacSystemFont,"Hiragino Kaku Gothic ProN","Yu Gothic",Meiryo,sans-serif;overflow-wrap:anywhere}main{max-width:1040px;padding:52px 40px 70px;margin:auto}a{color:var(--blue);text-underline-offset:4px}a:focus-visible,summary:focus-visible{outline:3px solid var(--blue);outline-offset:5px}.skip{position:absolute;top:-100px;background:var(--paper);padding:10px}.skip:focus{top:12px}.eyebrow,.section-no{font-size:13px;letter-spacing:.12em;color:var(--muted)}h1{font-size:clamp(32px,5vw,48px);line-height:1.45;margin:14px 0 22px;letter-spacing:-.03em}h2{font-size:clamp(25px,3.5vw,32px);line-height:1.6;margin:10px 0 22px}h3{font-size:20px;line-height:1.6;margin:0 0 12px}h4{font-size:17px;margin:0 0 10px}p{margin:12px 0 20px}.lead{font-size:20px;max-width:810px}.small,figcaption,.source{font-size:14px;color:var(--muted)}.source{margin-top:12px}.section{margin-top:64px;padding-top:30px;border-top:1px solid var(--line)}nav{display:flex;flex-wrap:wrap;gap:8px 22px;font-size:14px;margin:28px 0}.summary{background:var(--dark);color:var(--on-dark);padding:26px 30px;border-radius:18px}.summary p{margin:6px 0}.summary strong{font-size:21px}.paper,figure{background:var(--paper);padding:26px;border:1px solid var(--line);border-radius:18px;margin:26px 0}.callout{border-left:4px solid var(--blue);padding:14px 22px;background:var(--blue-bg);margin:24px 0}.callout p:last-child{margin-bottom:4px}.label{font-size:13px;font-weight:600;color:var(--muted)}.two,.three{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}.three{grid-template-columns:repeat(3,minmax(0,1fr))}.tile{padding:20px;background:var(--paper);border:1px solid var(--line);border-radius:14px}.tile p{font-size:15px;margin:8px 0}.tile .tag{font-size:13px;color:var(--blue)}.node{border:1px solid var(--line);background:var(--paper);border-radius:10px;padding:15px 14px;text-align:center;min-width:0}.node strong{display:block}.node small{display:block;font-size:14px;color:var(--muted)}.node.blue{background:var(--blue-bg);border-color:var(--blue)}.node.green{background:var(--green-bg);border-color:var(--green)}.node.orange{background:var(--orange-bg);border-color:var(--orange)}.flow{display:flex;gap:10px;align-items:stretch;margin:16px 0}.flow>.node{flex:1}.arrow{align-self:center;color:var(--muted);flex:none;font-size:23px}.arrow::before{content:'→'}.down{text-align:center;color:var(--muted);font-size:22px;padding:7px 0;line-height:1.4}.join{text-align:center;font-size:14px;color:var(--muted);padding:10px 0}.center{max-width:420px;margin:auto}.branch{display:grid;grid-template-columns:1fr 1fr;gap:18px}.branch-caption{text-align:center;color:var(--green);font-size:14px;margin:12px 0 8px}.return{border-left:3px solid var(--orange);padding:12px 18px;background:var(--orange-bg);font-size:15px;margin-top:18px}.frame{border:2px solid var(--blue);border-radius:14px;padding:22px;background:var(--blue-bg)}.frame-label{color:var(--blue);font-weight:600;text-align:center;margin-bottom:16px}.mini-loop{margin-top:12px;border-top:1px solid var(--line);padding-top:9px;font-size:13px;color:var(--orange)}figcaption{margin-top:16px}table{width:100%;border-collapse:collapse;margin:20px 0;font-size:15px}caption{text-align:left;color:var(--muted);font-size:14px;margin-bottom:10px}th,td{text-align:left;vertical-align:top;border-bottom:1px solid var(--line);padding:14px 12px}th{font-weight:600;background:var(--blue-bg)}td:first-child{font-weight:600;width:24%}ul,ol{padding-left:1.4em}li{margin:10px 0}code{font-size:.92em;background:var(--blue-bg);padding:2px 5px;border-radius:4px}pre{white-space:pre-wrap;overflow-wrap:anywhere;font-family:inherit;font-size:15px;line-height:1.9;background:var(--dark);color:var(--on-dark);border-radius:14px;padding:24px}.timeline{list-style:none;padding:0;border-left:2px solid var(--line);margin-left:8px}.timeline li{position:relative;padding:0 0 20px 24px}.timeline li::before{content:'';position:absolute;left:-6px;top:10px;width:10px;height:10px;border-radius:50%;background:var(--blue)}.timeline strong{display:block}.timeline p{font-size:15px;margin:6px 0}details{border-top:1px solid var(--line);padding:16px 0;margin-top:18px}summary{cursor:pointer;font-weight:600}details p{font-size:15px}.steps{list-style:none;counter-reset:step;padding:0}.steps li{counter-increment:step;padding:4px 0 20px 48px;position:relative}.steps li::before{content:counter(step);position:absolute;left:0;top:5px;width:30px;height:30px;line-height:30px;border-radius:50%;text-align:center;background:var(--dark);color:var(--on-dark);font-size:14px}.steps strong{display:block;font-size:19px}.steps p{margin:8px 0;font-size:16px}.metric{background:var(--green-bg);padding:26px;border-radius:16px}.metric strong{font-size:22px;display:block}footer{font-size:14px;color:var(--muted);margin-top:60px;border-top:1px solid var(--line);padding-top:24px}
+@media(prefers-color-scheme:dark){:root{--bg:#111b29;--paper:#1b283a;--ink:#e9eef6;--muted:#b3c1d3;--line:#35475f;--blue:#a7c5ff;--blue-bg:#1c304d;--green:#9bd6ba;--green-bg:#1c362c;--orange:#efc38e;--orange-bg:#3b2c1b;--dark:#0c1625;--on-dark:#f6f9ff}}
+@media(max-width:680px){main{padding:30px 20px 48px}body{font-size:16px}.lead{font-size:18px}.two,.three{grid-template-columns:1fr}.flow{flex-direction:column}.arrow::before{content:'↓'}.branch{gap:10px}.branch .node{padding:13px 8px}.branch .node small{font-size:13px}.paper,figure,.frame{padding:18px}.summary{padding:22px}.section{margin-top:45px}th,td{padding:12px 8px;font-size:14px}td:first-child{width:27%}.metric strong{font-size:19px}pre{font-size:14px;padding:18px}}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+@media print{:root{color-scheme:light;--bg:#fff;--paper:#fff;--ink:#19283d;--muted:#55647a;--line:#d8e0eb;--blue:#2358ad;--blue-bg:#edf3ff;--green:#23664e;--green-bg:#edf7f1;--orange:#8b4c08;--orange-bg:#fff3e5;--dark:#edf1f7;--on-dark:#19283d}body{font-size:11pt}main{padding:0;max-width:none}nav,.skip{display:none}h1{font-size:28pt}h2{font-size:21pt}.section{margin-top:28px}figure,.tile,.steps li,tr{break-inside:avoid}h2,h3{break-after:avoid}}
+</style>
+</head>
+<body>
+<a class="skip" href="#why">本文へ進む</a>
+<main>
+<header>
+  <span class="eyebrow">実務への橋渡し ／ HARNESS・LOOP・GRAPH</span>
+  <h1>グラフで、AIの仕事を<br>どう設計するか。</h1>
+  <p class="lead">用語の意味から一歩進んで、<strong>どこをAIに任せ、どこを仕組みで決めるのか</strong>を考える資料です。最近の動向と、一つの開発作業を例に、設計の中身まで説明します。</p>
+  <p class="small">2026年10月28日確認 ／ 入門より詳しく、実装仕様より手前 ／ <a href="agent-engineering-beginner.html">入門版へ</a></p>
+  <nav aria-label="目次"><a href="#why">なぜ今グラフ？</a><a href="#design">何を設計する？</a><a href="#example">実際の開発で見る</a><a href="#state">状態と証拠</a><a href="#memory">記憶との違い</a><a href="#start">今の環境へ</a></nav>
+  <div class="summary"><strong>中心になるのは、仕事を次へ進める条件。</strong><p>「AIを何人並べるか」に加えて、何を受け渡し、何が確認できたら先へ進み、失敗したらどこへ戻るかを決めます。</p></div>
+</header>
+
+<section id="why" class="section">
+  <span class="section-no">01 ／ 最近の動向を、設計の変化として読む</span>
+  <h2>一人のAIが作業できるようになると、<br>次は仕事全体の組み方が問題になる。</h2>
+  <p>一つの修正なら、AIがファイルを読み、直し、テストするループで済みます。ところが仕事が大きくなると、仕様調査、複数箇所の実装、検証、最終判断が絡みます。<strong>各担当が優秀でも、受け渡しが曖昧だと全体は止まります。</strong></p>
+  <p>たとえば、実装担当は「終わった」と言う。確認担当は古い版を見ている。別の担当は同じファイルを書き換えている。これはモデルの回答能力だけを上げても残る、仕事の組み方の問題です。ここにグラフ設計の出番があります。</p>
+  <ol class="timeline">
+    <li><strong>2026年7月：呼称としての「Graph Engineering」が話題に</strong><p>LangChainの7月22日記事が、Xでの話題化を取り上げました。グラフで処理を組む技術自体は以前からあります。<a href="https://www.langchain.com/blog/3-years-of-graph-engineering-with-langgraph">公式記事</a></p></li>
+    <li><strong>2026年8月：研究側でも整理が進む</strong><p>8月21日公開のサーベイは、タスク、エージェント、実行状態を明示的につなぐ観点で体系化しています。万能な生産性向上を証明した論文ではありません。<a href="https://arxiv.org/abs/2608.21156">論文</a></p></li>
+    <li><strong>現在：エージェントの調整を、再利用できる処理にする</strong><p>Claude CodeのDynamic workflowsは、複数担当の分岐・反復・中間結果をスクリプトで扱います。毎回の会話に仕事の段取りを持たせる方式とは、管理する場所が変わります。<a href="https://code.claude.com/docs/en/workflows">公式仕様</a></p></li>
+  </ol>
+  <div class="callout"><strong>何が実用上の変化なのか</strong><p>一つの箱に「AIへの質問」だけでなく、調べ、実装し、テストまで行う<strong>一まとまりのエージェント作業</strong>を入れられるようになったことです。その作業同士をどうつなぐかが重要になります。</p></div>
+  <p class="source">この変化の見方はLangChainの説明に基づきます。呼称の流行、製品機能の存在、実際の生産性向上は、それぞれ分けて判断します。</p>
+</section>
+
+<section id="layers" class="section">
+  <span class="section-no">02 ／ ハーネス・ループ・グラフの関係</span>
+  <h2>3つは、設計する範囲が違う。</h2>
+  <div class="three">
+    <div class="tile"><span class="tag">ハーネス ／ 実行環境</span><h3>仕事を支える</h3><p>道具、権限、記憶、ログ、実行や停止の仕組み。グラフの実行器を含むこともあります。</p></div>
+    <div class="tile"><span class="tag">ループ ／ 反復</span><h3>結果を見て直す</h3><p>実行→検証→修正。何を評価し、どこまで再試行するかを決めます。</p></div>
+    <div class="tile"><span class="tag">グラフ ／ 接続構造</span><h3>全体を組み立てる</h3><p>仕事の分岐、依存、合流、差し戻し。担当同士のつながりを決めます。</p></div>
+  </div>
+  <figure>
+    <div class="frame">
+      <div class="frame-label">ハーネス：道具・権限・状態保存・実行制御</div>
+      <div class="node center"><strong>目的と受け入れ条件</strong><small>何を満たしたら使える成果か</small></div>
+      <div class="down" aria-hidden="true">↓</div>
+      <div class="branch">
+        <div class="node"><strong>作業A</strong><small>独立した担当</small><div class="mini-loop">実行 → 検証 → 修正 ↩</div></div>
+        <div class="node"><strong>作業B</strong><small>独立した担当</small><div class="mini-loop">実行 → 検証 → 修正 ↩</div></div>
+      </div>
+      <div class="join">↓ 必要な結果が揃ったら合流 ↓</div>
+      <div class="node center"><strong>全体の検証・採用判断</strong><small>個別の成功だけで完了にしない</small></div>
+    </div>
+    <figcaption>分岐・合流を含むつながりがグラフ。各作業の中にもループがあり、全体をハーネスが支えます。これは概念上の整理で、製品ごとに機能の境界は重なります。</figcaption>
+  </figure>
+  <p>「ループからグラフに進化した」という表現は、扱う仕事の範囲が広がったという意味なら理解できます。ただし、<strong>ループは循環を持つグラフの一種</strong>です。グラフを導入しても、修正や再検証は引き続き必要です。</p>
+</section>
+
+<section id="design" class="section">
+  <span class="section-no">03 ／ 図を描くだけで終わらせない</span>
+  <h2>箱・矢印・状態を、具体的に決める。</h2>
+  <p>グラフには、作業を表す<strong>ノード</strong>、つながりを表す<strong>エッジ</strong>があります。さらに実行には、今何が終わり、どんな結果があるかという<strong>状態</strong>が必要です。まずはこの3語を押さえれば十分です。</p>
+  <table>
+    <caption>開発の仕事に置き換えると</caption>
+    <thead><tr><th scope="col">要素</th><th scope="col">決めること</th><th scope="col">具体例</th></tr></thead>
+    <tbody>
+      <tr><td>箱＝ノード</td><td>何を受け取り、何を返すか</td><td>実装担当は、仕様を受け取り、変更と検証結果を返す</td></tr>
+      <tr><td>矢印＝エッジ</td><td>どの条件で、誰へ進むか</td><td>テスト成功ならレビューへ。失敗なら修正へ</td></tr>
+      <tr><td>状態</td><td>途中経過を何として保存するか</td><td>対象の版、完了した作業、失敗理由、残りの試行回数</td></tr>
+    </tbody>
+  </table>
+  <p>たとえば「実装→レビュー」という矢印には、<strong>成果物の場所が分かる／対象の版が固定されている／必要な検証結果がある</strong>という条件を付けられます。これを人やプログラムが確認することで、AIの「できました」だけで先へ進むのを防ぎます。</p>
+  <div class="callout"><strong>「分担」と「実行できる設計」の違い</strong><p>「Aさんが実装、Bさんがレビュー」だけなら役割分担です。そこに、入力・出力・次へ進む条件・失敗時の戻し先・保存する状態を加えると、実行を管理できる設計になります。</p></div>
+  <p>すべての矢印を事前に固定する必要はありません。調査で見つかった対象ごとに担当を増やすこともできます。ただし、その場合も「何件まで広げるか」「どの結果を待つか」「何が揃えば完了か」は決めておきます。</p>
+  <details><summary>もう一段深く：普通のワークフローとの違いは？</summary><p>決めた手順をつなぐ点は同じです。エージェントを使うと、箱の中で解き方を探索したり、実行時に必要な作業を追加したりできます。既知の制約は処理で守り、未知の調査や実装判断にはAIの自由度を残す、という組み合わせが実用的です。</p></details>
+</section>
+
+<section id="example" class="section">
+  <span class="section-no">04 ／ 今のプロジェクトを例にする</span>
+  <h2>「不具合を直して」で、<br>どんなグラフを組むのか。</h2>
+  <div class="callout"><span class="label">題材：過去のレビューに記録された問題</span><p>プロジェクトAで検証を始め、終了前にプロジェクトBへ移動すると、AのエラーからBの同名ファイルへ飛んでしまう。</p><p class="small">2026年10月1日の<a href="review-2026-10-01.md">レビュー記録</a>を、設計の教材として使います。現在も未修正だと断定するものではありません。</p></div>
+  <p>一人のAIに調査・実装・確認をすべて順番に任せる方法でも、この問題は解けます。グラフを設計する価値は、分ける意味がある作業を分けて、<strong>何が完了したかを明確にする</strong>ことにあります。以下は、この仕事への構成案です。</p>
+  <figure>
+    <div class="node center blue"><strong>① 完成条件を決める</strong><small>移動しても、検証を始めたAのファイルへ飛ぶ</small></div>
+    <div class="down" aria-hidden="true">↓</div>
+    <div class="branch-caption">独立に調べ、最後に結果を合わせる</div>
+    <div class="branch">
+      <div class="node green"><strong>② 原因を調べる</strong><small>パスがいつ、どの場所を基準に決まるか</small></div>
+      <div class="node green"><strong>② 検証方法を考える</strong><small>Aで開始しBへ移る状況を、どう再現するか</small></div>
+    </div>
+    <div class="join">↓ 原因と検証方法が揃う ↓</div>
+    <div class="node center"><strong>③ 実装する</strong><small>変更範囲を決め、修正とテストを作る</small></div>
+    <div class="down" aria-hidden="true">↓</div>
+    <div class="branch">
+      <div class="node"><strong>④ 機械で検証</strong><small>再現テストと、既存の起動・構文チェック</small></div>
+      <div class="node"><strong>④ 別担当が確認</strong><small>仕様との一致、取りこぼした条件、変更の影響</small></div>
+    </div>
+    <div class="join">↓ 同じ版について両方が確認できる ↓</div>
+    <div class="node center blue"><strong>⑤ 本人が採用判断</strong><small>差分・証拠・未確認の範囲を確認</small></div>
+    <div class="return"><strong>失敗時の戻し先も設計する</strong><br>実装の問題 → ③へ戻す。期待する動作が曖昧 → ①へ戻す。環境が動かない → 原因を記録して環境を確認する。</div>
+    <figcaption>②の担当が書くのは独立した調査結果。④は同じ版を確認します。実行がファイルを変更する検証は、環境を分けるか順番に行います。</figcaption>
+  </figure>
+  <p>小さな修正に毎回この人数を使う必要はありません。②を一人で済ませても、④を順番に実行しても構いません。<strong>必要な責任と確認を残しつつ、人数と実行方法は仕事に合わせる</strong>のが設計です。</p>
+  <details><summary>なぜ「別ファイルなら並列」で決めてはいけない？</summary><p>別ファイルでも、同じAPIの入力形式を変更したり、同じデータベースや作業場所を使ったりすれば影響し合います。データの依存だけでなく、書き込み先、共有資源、最後の統合方法も確認します。worktreeは編集用の作業コピーを分けますが、変更の意味的な衝突までは消しません。</p></details>
+</section>
+
+<section id="state" class="section">
+  <span class="section-no">05 ／ 実務で差がつく部分</span>
+  <h2>「誰が動いたか」より、<br>「何を確認した状態か」を残す。</h2>
+  <p>会話に「テスト成功」と書いてあっても、その後にコードを変更したら、その成功は今のコードの証拠ではありません。複数担当を動かすと、この取り違えが起きやすくなります。</p>
+  <div class="two">
+    <div class="tile"><span class="tag">記録が曖昧な場合</span><h3>「テストは成功しました」</h3><p>どのプロジェクトか。どの版か。何を試したか。後からもう一度調べる必要があります。</p></div>
+    <div class="tile"><span class="tag">判断に使える場合</span><h3>「修正版v2で再現テスト成功」</h3><p>AからBへの移動を検証。ログはここ。実画面は未確認。次は独立レビュー。</p></div>
+  </div>
+  <p>ここでのv2は説明用の名前です。実際には、Gitのコミットや未コミット差分の識別情報などで、<strong>確認した成果物を特定できるようにします。</strong>最新版と一致しなければ、必要な検証をやり直します。</p>
+  <pre>作業：検証結果が別プロジェクトを指す問題の修正
+対象：nvim-config ／ 修正版v2
+完了：修正・再現テスト
+証拠：実行コマンド・結果・ログの保存先
+未確認：普段の操作画面での確認
+次の担当：独立した確認担当
+次の行動：条件と差分を照合する</pre>
+  <p>状態を保存しておけば、翌日は作業全体を説明し直さずに、未完了の部分から続けられます。ただし、<strong>ログが残っていることと、安全に再実行できることは別</strong>です。外部へ送信した処理などは、結果を確かめずに繰り返すと二重実行になります。</p>
+  <div class="callout"><strong>図が運用に変わるのは、この部分です</strong><p>分岐の図だけでなく、途中経過と証拠が残り、その状態を使って次の担当と実行内容を決められること。これが、長い仕事を任せるうえで役立ちます。</p></div>
+</section>
+
+<section id="memory" class="section">
+  <span class="section-no">06 ／ 最近の投稿で混ざりやすい話</span>
+  <h2>仕事のグラフと、記憶のグラフは別物。</h2>
+  <p>「グラフを入れればAIが忘れなくなる」という説明は、省略が多すぎます。仕事の順番を管理することと、知識を保存して検索することは、違う設計です。</p>
+  <div class="two">
+    <div class="tile"><span class="tag">実行グラフ</span><h3>次に何を動かす？</h3><div class="node">調査 → 実装 → 検証</div><p>担当、依存、分岐、停止、再開を管理します。</p></div>
+    <div class="tile"><span class="tag">知識・根拠のグラフ</span><h3>何と何が関係する？</h3><div class="node">要求 → 設計判断 → 実装 → テスト</div><p>変更の理由や、確認すべき箇所を探すために使います。</p></div>
+  </div>
+  <p>両者は組み合わせられます。実装担当が仕事を始めるときに、関係する要求・過去の判断・テストを探して渡す。仕事が終わったら、新しい証拠を保存する。この往復で、次の仕事に使える情報が増えます。</p>
+  <p>ただし、保存した情報が間違っていたり古くなったりすれば、次のAIにも誤りを渡します。そのため、出典、対象の版、確認日、未確認かどうかを残します。<strong>グラフに格納しただけで、情報が正しくなるわけではありません。</strong></p>
+  <table>
+    <caption>名前の近い技術を、目的で区別する</caption>
+    <thead><tr><th scope="col">仕組み</th><th scope="col">主に扱うこと</th></tr></thead>
+    <tbody><tr><td>LangGraph</td><td>エージェントや処理のつながり、実行状態、再開</td></tr><tr><td>GraphRAG</td><td>文書から関係を抽出し、検索や回答に利用</td></tr><tr><td>Dreams</td><td>Anthropic Managed Agentsの過去セッションと記憶を整理</td></tr></tbody>
+  </table>
+  <p class="source"><a href="https://docs.langchain.com/oss/python/langgraph/persistence">LangGraph公式</a> ／ <a href="https://microsoft.github.io/graphrag/">GraphRAG公式</a> ／ <a href="https://platform.claude.com/docs/en/managed-agents/dreams">Dreams公式</a>。詳細は先の調査で確認。これらを一式揃える必要はありません。</p>
+  <details><summary>dreamingと「自己改善」は、どこまで期待してよい？</summary><p>記憶を整理することと、モデル自体の学習は違います。個人環境なら、失敗記録から手順の改善案を作り、別のケースでも良くなったか確認してから採用する方法が現実的です。毎回自動で規約を追加するだけでは、古い前提や誤った教訓も蓄積します。</p></details>
+</section>
+
+<section id="benefit" class="section">
+  <span class="section-no">07 ／ 導入する価値を判断する</span>
+  <h2>量を増やす経路と、質を上げる経路。</h2>
+  <p>グラフ設計が役立つ可能性は、大きく二つあります。ひとつは待つ必要のない仕事を同時に進めること。もうひとつは、必要な確認を通ってから次へ進むことです。以下は期待する効果の仕組みであり、改善率の保証ではありません。</p>
+  <div class="two">
+    <div class="tile"><span class="tag">量への効果</span><h3>待ち時間を減らす</h3><p>独立した調査を並列化し、途中再開でやり直しを減らす。同じ人間時間で扱える仕事を増やします。</p></div>
+    <div class="tile"><span class="tag">質への効果</span><h3>見落としを拾う経路を作る</h3><p>実装とは別の観点で確認し、証拠が不足すれば差し戻す。未確認のまま完成になる経路を減らします。</p></div>
+  </div>
+  <p>一方で、担当を増やすと説明、引き継ぎ、統合、費用も増えます。全員が同じ誤った情報を読むと、人数を増やしても同じ結論になります。レビュー待ちが積み上がれば、人間の負担も増えます。</p>
+  <table>
+    <thead><tr><th scope="col">仕事の状況</th><th scope="col">向いている始め方</th></tr></thead>
+    <tbody><tr><td>小さな既知の修正</td><td>作る担当1人＋別担当による確認。大きな分岐は不要。</td></tr><tr><td>独立した調査が複数</td><td>2〜3担当で調査し、結果を統合して出典を確認。</td></tr><tr><td>前の結果がないと進めない</td><td>順番に実行。グラフで状態を管理しても、並列化の利益は小さい。</td></tr><tr><td>問題自体がまだ不明</td><td>まず一人と探索し、分ける意味が見えてから分担。</td></tr></tbody>
+  </table>
+  <div class="metric"><span class="label">測る中心</span><strong>受け入れられた成果 ÷ 自分の総関与時間</strong><p>指示、調査、レビュー、手戻り、仕組みの保守まで含めます。品質と総費用も併せて確認します。</p></div>
+</section>
+
+<section id="start" class="section">
+  <span class="section-no">08 ／ あなたの環境への具体的な提案</span>
+  <h2>既存の仕組みに、<br>「受け渡しの条件」を足す。</h2>
+  <p>今のnvim-configには、要求、設計判断、作る担当と確認担当を分ける方針、検証スクリプト、引き継ぎ記録があります。最初はそれらをつないで、一つの仕事を再現できるようにする提案です。</p>
+  <ol class="steps">
+    <li><strong>まず、作業票を一つ作る</strong><p>目的、対象、成果物、完成条件、参照先、上限、戻し先を短く書く。各担当に会話全文を配る代わりに、必要な原本への入口を渡します。</p></li>
+    <li><strong>検証を、そのプロジェクトに合わせる</strong><p>汎用的な検証手順から、nvim-config専用の検証へ接続する。起動チェックが成功したことと、変更した振る舞いが正しいことを分けて確認します。</p></li>
+    <li><strong>成果物・対象版・検証結果を一組で渡す</strong><p>別担当が同じ版を確認し、問題があれば修正へ戻す。翌日は、指定したプロジェクトと作業票から再開します。</p></li>
+    <li><strong>独立した枝だけを増やす</strong><p>調査の分担などで効果を測る。再利用する価値が出た段階で、Dynamic workflowsなどに段取りを保存します。</p></li>
+    <li><strong>失敗から、手順の改善を一つ試す</strong><p>例：「古いテスト結果を流用した」なら、対象版の照合を必須にする。変更前後を同程度の仕事で比べ、改善したものを残します。</p></li>
+  </ol>
+  <details><summary>Skill・Agent Teams・Dynamic workflowsは、どう選ぶ？</summary><p>Skillは、繰り返す手順を保存する入口。Agent Teamsは、主担当が状況を見ながら複数担当を調整する方式。Dynamic workflowsは、分岐や反復の段取りをスクリプトで実行する方式です。まず手順を安定させ、何度も同じ流れで広い仕事を回す必要が出たら、実行の仕組みを選びます。</p><p class="source"><a href="https://code.claude.com/docs/en/workflows">Claude Code公式の比較</a>に基づく整理。機能を使えるかは契約や組織設定にも依存します。</p></details>
+  <div class="summary"><strong>次の一歩は、一つの仕事を「途中からでも、証拠付きで続けられる」形にすること。</strong><p>その仕事の中に独立した部分があれば分ける。効果が確認できた手順を再利用し、他の人にも再現できるようにしてからチームへ広げます。</p></div>
+</section>
+
+<footer>
+  <p>この資料は、調査報告の内容を実務の設計判断ができる粒度へ再構成したものです。最新動向の主要3資料は2026年10月28日に再確認。図の開発フロー・導入順はこの環境向けの提案であり、実装済み・効果実証済みとは扱いません。</p>
+  <p><a href="agent-engineering-beginner.html">用語から読む入門版</a> ／ <a href="research-2026-10-27-agent-engineering.md">根拠・投稿検証を含む詳細調査</a> ／ <a href="00-dna.md">現プロジェクトの開発方針</a></p>
+  <p>本文と図はオフラインで読めます。補足は「もう一段深く」などの項目を開くと読めます。</p>
+</footer>
+</main>
+</body>
+</html>
