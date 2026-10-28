@@ -79,6 +79,8 @@ Checkerの後に競合解消・追加修正・取り込みで対象が変われ�
 
 Claude Code向けの役割定義は [Maker](../.claude/agents/maker.md) と [Checker](../.claude/agents/checker.md) に置く。hookは役割を越える典型的な操作を防ぐ補助であり、任意のshell処理を完全に隔離するsandboxではない。設定の適用範囲と残る制約を理解して使う。
 
+Makerの `git push` は作業ブランチ宛ても含めてガードで拒否する。実装・統合を終えたら主担当へ返し、検証後のpushを統括が担当する。
+
 **Codexでは `.claude/agents/` のツール制限やClaude Codeのhookは自動適用されない。** 統括が依頼に所有範囲と禁止操作を明記し、利用可能な権限設定と独立レビューで境界を保つ。ファイルを置いただけで、すべてのエージェントを制限できたとは扱わない。
 
 横に広い読み取り監査は、保存した [audit workflow](../.claude/workflows/audit.js) を利用できる。Claude Codeの対応環境で `/workflows` から選び、`lens`（観点）、`targets`（対象一覧）、`revision`（完全なcommit SHA）、`context`、`concurrency`（2または3）を渡す。対象ごとの調査と指摘の反証を分け、結果の版一致を確認し、未確認・失敗を合格と分けて返す。

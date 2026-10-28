@@ -19,7 +19,7 @@ function invokeGuard(role, command, options = {}) {
     ...options,
   });
 }
-await test("maker blocks self approval and all main refspecs", () => {
+await test("maker blocks self approval and every push", () => {
   for (const command of [
     "gh pr merge 1", "gh -R org/repo pr merge 1", "gh pr review 1 --approve", "gh pr comment 1 --body hi",
     "git push", "git push origin", "git push origin HEAD", "git push origin main",
@@ -32,15 +32,16 @@ await test("maker blocks self approval and all main refspecs", () => {
     "git push --repo origin", "git push --push-option=ci.skip origin",
     "git push origin > /tmp/push.log", "git push origin # no explicit branch",
     "git push origin :", "git push origin +:",
-  ]) assert.equal(invokeGuard("maker", command).status, 2, command);
-});
-await test("maker can integrate and push explicit work branches", () => {
-  for (const command of [
-    "git status", "git merge origin/main", "git add lua/workflow/spec.lua",
+    "git push origin @",
     "git push -u origin codex/graph", "git push origin HEAD:refs/heads/codex/graph",
     "git push origin feature/main-menu && gh pr create --base main",
     "git push --force-with-lease origin codex/graph",
     "git push --force-with-lease=refs/heads/codex/graph:abc origin HEAD:codex/graph",
+  ]) assert.equal(invokeGuard("maker", command).status, 2, command);
+});
+await test("maker can implement, integrate and verify locally", () => {
+  for (const command of [
+    "git status", "git merge origin/main", "git add lua/workflow/spec.lua",
     "make check", "node scripts/graph-tests.mjs",
   ]) assert.equal(invokeGuard("maker", command).status, 0, command);
 });

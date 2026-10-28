@@ -67,35 +67,9 @@ function check(role, tokens) {
     if (tokens.some(token => token.startsWith("-c") || token.startsWith("--config-env"))) {
       fail("gitの一時設定変更は主担当へ返してください");
     }
-    const [operation, ...args] = gitArgs(tokens);
+    const [operation] = gitArgs(tokens);
     if (operation === "push") {
-      // Require a destination ref so current branch/push.default cannot target main.
-      if (args.some(arg => ["<", ">"].includes(arg) || arg.startsWith("#"))) {
-        fail("pushのリダイレクト・コメントは判定できません。単純なコマンドにしてください");
-      }
-      const positional = [];
-      let options = true;
-      const flags = new Set(["-u", "--set-upstream", "-f", "--force", "--force-with-lease",
-        "-n", "--dry-run", "--porcelain", "-v", "--verbose", "-q", "--quiet", "--atomic"]);
-      for (const arg of args) {
-        if (options && arg === "--") { options = false; continue; }
-        if (options && arg.startsWith("-")) {
-          // Value-taking/unknown flags can hide an implicit push. Fail closed
-          // instead of mistaking their values for a remote or destination ref.
-          if (!flags.has(arg) && !arg.startsWith("--force-with-lease=")) {
-            fail("未対応のpushオプションです。remoteと作業ブランチを単純な形で明示してください");
-          }
-        } else positional.push(arg);
-      }
-      if (positional.length < 2) {
-        fail("暗黙/全ブランチpushは禁止。作業ブランチを明示してください");
-      }
-      for (const ref of positional.slice(1)) {
-        const destination = ref.replace(/^\+/, "").split(":").at(-1);
-        if (!destination || ["main", "refs/heads/main", "HEAD"].includes(destination) || destination.includes("*")) {
-          fail("mainまたは未確定の参照へのpushは禁止");
-        }
-      }
+      fail("pushは作業ブランチを含め主担当へ返してください");
     }
     if (role === "checker") {
       const allowed = ["status", "diff", "log", "show", "rev-parse", "ls-files", "ls-tree", "describe"];
