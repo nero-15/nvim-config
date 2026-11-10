@@ -35,7 +35,7 @@ end
 test("user commands exist", function()
   local cmds = vim.api.nvim_get_commands({})
   for _, name in ipairs({ "Check", "Verify", "VerifyLog", "Spec", "Tasks", "Adr", "Plans", "SpecGrep", "Worktrees",
-    "ClaudeNew", "ClaudeSessions", "Preview", "PreviewStop" }) do
+    "ClaudeNew", "ClaudeSessions", "ClaudeNext", "ClaudeWorktree", "VerifySend", "Preview", "PreviewStop" }) do
     assert(cmds[name], "missing :" .. name)
   end
 end)
@@ -226,7 +226,7 @@ end)
 
 -- ── キーマップ (R-11: which-key から辿れる) ──
 test("leader keymaps are registered", function()
-  local want = { " ss", " st", " vc", " vv", " gw", " gd", " ac", " an", " mp", " ff", " e", " u", " rr" }
+  local want = { " ss", " st", " vc", " vv", " gw", " gd", " ac", " an", " aw", " aW", " av", " mp", " ff", " e", " u", " rr" }
   local have = {}
   for _, m in ipairs(vim.api.nvim_get_keymap("n")) do
     have[m.lhs:gsub("<Space>", " ")] = true
@@ -252,6 +252,54 @@ end)
 test("Claude clipboard does not leak Base64 into terminal", function()
   local result = vim.system({ vim.v.progpath, "--clean", "--headless", "-l",
     vim.fn.stdpath("config") .. "/scripts/claude-clipboard.lua" }, { text = true }):wait(15000)
+  assert(result.code == 0, (result.stderr or "") .. (result.stdout or ""))
+end)
+
+-- 実構成 (snacks のターミナル・lualine) で、起動した Claude と hook の状態が結び付く
+test("agents: launched sessions join their hook state in the real config", function()
+  local bin = tmpdir({ claude = "#!/bin/sh\nsleep 30", caffeinate = '#!/bin/sh\nshift\nexec "$@"' })
+  vim.fn.setfperm(bin .. "/claude", "rwxr-xr-x")
+  vim.fn.setfperm(bin .. "/caffeinate", "rwxr-xr-x")
+  local path, notify = vim.env.PATH, vim.notify
+  vim.env.PATH = bin .. ":" .. path
+  vim.notify = function() end
+  local agents, claude = require("workflow.agents"), require("workflow.claude")
+  local os_notify = agents.os_notify
+  agents.os_notify = function() end
+  local ok, err = pcall(function()
+    claude.new()
+    local items = claude.items()
+    eq(#items, 1, "one Claude terminal")
+    local buf = items[1].buf
+    local slot = vim.b[buf].claude_slot
+    assert(slot, "launched terminal has no slot")
+    eq(items[1].state, nil, "no state before the first hook")
+    vim.cmd("tabnew")
+    agents.signal(slot, "Notification", vim.base64.encode(vim.json.encode({
+      cwd = vim.fn.getcwd(), notification_type = "permission_prompt", message = "許可?" })))
+    eq(agents.buf(slot), buf, "hook state resolves to the launched terminal")
+    items = claude.items()
+    eq(items[1].session.state, "waiting")
+    assert(items[1].text:find("判断待ち", 1, true) and items[1].text:find("許可?", 1, true), items[1].text)
+    assert(agents.statusline():find("!1", 1, true), agents.statusline())
+    require("lazy").load({ plugins = { "lualine.nvim" } })
+    assert(require("lualine").statusline(true):find("!1", 1, true), "statusline lacks the agent count")
+    assert(require("workflow.tabline").render():find("! ", 1, true), "tab lacks the attention mark")
+    vim.cmd("ClaudeNext")
+    eq(vim.api.nvim_get_current_buf(), buf, ":ClaudeNext did not reach the waiting session")
+    vim.api.nvim_buf_delete(buf, { force = true })
+    assert(vim.wait(3000, function() return agents.sessions[slot] == nil end, 20), "closed session stayed listed")
+  end)
+  vim.env.PATH, vim.notify, agents.os_notify = path, notify, os_notify
+  vim.cmd("silent! stopinsert")
+  vim.cmd("silent! tabonly!")
+  vim.cmd("silent! only!")
+  assert(ok, err)
+end)
+
+test("agents: Claude hook signals drive state, attention and focus", function()
+  local result = vim.system({ vim.v.progpath, "--clean", "--headless", "-l",
+    vim.fn.stdpath("config") .. "/scripts/agents-regression.lua" }, { text = true }):wait(20000)
   assert(result.code == 0, (result.stderr or "") .. (result.stdout or ""))
 end)
 

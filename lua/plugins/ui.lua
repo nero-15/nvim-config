@@ -59,6 +59,21 @@ return {
         lualine_b = { { worktree, color = { gui = "bold" } }, "branch", "diff" },
         lualine_c = { { "filename", path = 1, symbols = { modified = " ●", readonly = " " } } },
         lualine_x = {
+          -- 並走中の Claude: 判断待ち / 完了・未読 / 作業中 の数 (R-14)。<leader>aw で跳ぶ
+          {
+            function()
+              return require("workflow.agents").statusline()
+            end,
+            cond = function()
+              local agents = package.loaded["workflow.agents"]
+              return agents ~= nil and next(agents.sessions) ~= nil
+            end,
+            color = function()
+              local state = require("workflow.agents").top_state()
+              local colors = { waiting = "#ff9e64", done = "#9ece6a", working = "#7aa2f7" }
+              return { fg = colors[state] or "#565f89", gui = state == "waiting" and "bold" or "" }
+            end,
+          },
           "diagnostics",
           {
             function()

@@ -1,7 +1,8 @@
 -- ==========================================================
 -- AI: Claude Code を Neovim の中で扱う (R-09, ADR-0003)
 --   メイン: claudecode.nvim (IDE 連携。選択範囲の送信・diff の受理/拒否)
---   追加:   :ClaudeNew / :ClaudeSessions で並走させる (lua/workflow/claude.lua)
+--   追加:   :ClaudeNew / :ClaudeWorktree / :ClaudeSessions で並走させる (lua/workflow/claude.lua)
+--   状態:   作業中・判断待ち・完了を hook で受け取り、<leader>aw で待たせている所へ跳ぶ (R-14)
 -- ==========================================================
 
 return {
@@ -34,7 +35,11 @@ return {
       { "<leader>ad", "<cmd>ClaudeCodeDiffDeny<CR>", desc = "Deny diff" },
       -- 並走
       { "<leader>an", "<cmd>ClaudeNew<CR>", desc = "New Claude session (this tab's cwd)" },
-      { "<leader>al", "<cmd>ClaudeSessions<CR>", desc = "List Claude sessions" },
+      { "<leader>al", "<cmd>ClaudeSessions<CR>", desc = "List Claude sessions (状態つき)" },
+      { "<leader>aw", "<cmd>ClaudeNext<CR>", desc = "Next Claude waiting for me (判断待ち・未読)" },
+      { "<leader>aW", "<cmd>ClaudeWorktree<CR>", desc = "New Claude in a new worktree" },
+      -- 停止条件が赤いとき、ログの場所と指示を入力欄へ入れる (送信は人が Enter)
+      { "<leader>av", "<cmd>VerifySend<CR>", desc = "Send failed check / verify to Claude" },
     },
     opts = {
       terminal_cmd = require("workflow.claude").cmd, -- :ClaudeNew と同じ（caffeinate 付き）

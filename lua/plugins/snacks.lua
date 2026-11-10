@@ -145,6 +145,15 @@ return {
           Snacks.toggle.inlay_hints():map("<leader>ti")
           Snacks.toggle.option("conceallevel", { off = 0, on = 2, name = "Conceal" }):map("<leader>tc")
           Snacks.toggle({
+            name = "Agent OS notifications (フォーカス外の通知)",
+            get = function()
+              return vim.g.agent_os_notify ~= false
+            end,
+            set = function(state)
+              vim.g.agent_os_notify = state
+            end,
+          }):map("<leader>tA")
+          Snacks.toggle({
             name = "Virtual lines (診断を行下に)",
             get = function()
               return vim.diagnostic.config().virtual_lines ~= false

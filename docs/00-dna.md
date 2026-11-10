@@ -38,10 +38,11 @@ flowchart LR
 |-----|----------------------|
 | 人間は仕様を書き、読む | Markdown・Mermaid・HTML 設計書を**リッチに**読める。仕様へ一瞬で飛べる |
 | Maker ≠ Checker | エージェントの diff を**レビューしやすい**（hunk 単位、worktree 横断） |
-| 停止条件は機械判定 | `make verify` / `pnpm verify` の結果が quickfix に落ち、赤から直接飛べる |
+| 停止条件は機械判定 | `make verify` / `pnpm verify` の結果が quickfix に落ち、赤から直接飛べる。赤はそのままエージェントへ返せる |
 | 記憶はディスクに | `TASKS.md`・`plans/`・`docs/` をエディタの「ホーム」として扱う |
-| 並走するエージェント | 複数の worktree・複数の Claude セッションを**見失わない** |
+| 並走するエージェント | 複数の worktree・複数の Claude セッションを**見失わない**。誰が人の判断を待っているかが分かる |
 | 人間チェックポイント | 変化を検知・可視化（自動リロード、git 差分、通知） |
+| 証拠は確認した版に結び付ける | 未コミットを含む内容を一つの ID で特定し、検証の記録に残す |
 
 ## この環境自体にも DNA を適用する
 
@@ -50,5 +51,6 @@ nvim-config もエージェントと一緒に育てる。つまりこのリポ�
 - 変更は [02-requirements.md](02-requirements.md) の要求 ID に紐づける。
 - 採用・不採用の判断は [adr/](adr/) に残す（「なぜそのプラグインか」を忘れないため）。
 - 役割・書き込み所有・差し戻し・同じ版の確認は [01-dev-loop.md](01-dev-loop.md) に集約する。
+- 文書は一つの問いに一つ。書く場所は [docs の索引](README.md) で決める。
 - 完了は [04-verification.md](04-verification.md) の停止条件で判定する。
 - セッションをまたぐ進捗は [tasks.md](tasks.md) に書く。

@@ -54,16 +54,28 @@ local function open_tab(path)
   vim.cmd.tcd(vim.fn.fnameescape(path))
 end
 
+--- 新しいタブで開く (:Worktrees と :ClaudeSessions から使う)
+---@param path string
+function M.open(path)
+  open_tab(path)
+  vim.cmd.edit(vim.fn.fnameescape(path))
+end
+
+--- 新しいタブで、既定ブランチとの差分をレビューする
+---@param path string
+function M.diff(path)
+  open_tab(path)
+  vim.cmd("CodeDiff " .. project.default_branch(path) .. "...")
+end
+
 local actions = {
   worktree_open = function(picker, item)
     picker:close()
-    open_tab(item.path)
-    vim.cmd.edit(vim.fn.fnameescape(item.path))
+    M.open(item.path)
   end,
   worktree_diff = function(picker, item)
     picker:close()
-    open_tab(item.path)
-    vim.cmd("CodeDiff " .. project.default_branch(item.path) .. "...")
+    M.diff(item.path)
   end,
   worktree_claude = function(picker, item)
     picker:close()

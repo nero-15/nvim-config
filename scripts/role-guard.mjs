@@ -81,7 +81,7 @@ function check(role, tokens) {
     return;
   }
   if (role !== "checker") return;
-  if (executable === "make" && tokens.length === 2 && ["check", "verify"].includes(tokens[1])) return;
+  if (executable === "make" && tokens.length === 2 && ["check", "verify", "tree-id"].includes(tokens[1])) return;
   if (executable === "bash" && tokens.length === 2 && tokens[1] === "scripts/verify.sh") return;
   const readers = ["pwd", "ls", "cat", "head", "tail", "wc", "stat", "readlink", "file", "rg", "grep", "true", "false"];
   if (!readers.includes(executable)) fail("Checkerの未対応コマンドです。Read/Grep/Globか主担当を利用してください");

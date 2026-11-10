@@ -15,7 +15,10 @@ function M.render()
     local agent = project.agent_name(cwd) ~= nil
     local hl = nr == current and "%#TabLineSel#" or "%#TabLine#"
     local icon = agent and "󰚩 " or ""
-    table.insert(parts, string.format("%s%%%dT %d %s%s ", hl, nr, nr, icon, project.label(cwd)))
+    -- そのタブの場所で Claude が人を待っていれば印を付ける (R-14)
+    local agents = package.loaded["workflow.agents"]
+    local attention = agents and agents.attention(cwd) or ""
+    table.insert(parts, string.format("%s%%%dT %d %s%s%s ", hl, nr, nr, attention, icon, project.label(cwd)))
   end
   return table.concat(parts) .. "%#TabLineFill#%T"
 end

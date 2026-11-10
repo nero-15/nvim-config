@@ -7,6 +7,11 @@ local M = {}
 
 local AGENT_WORKTREE_PATTERN = "/%.claude/worktrees/([^/]+)"
 
+--- この設定のチェックアウト (絶対パス)。同梱スクリプトを、読み込まれた Lua と同じ版から使うため
+--- stdpath("config") ではなくこのファイルの場所から求める (worktree で検証しても取り違えない)
+M.CONFIG = vim.fs.dirname(vim.fs.dirname(vim.fs.dirname(
+  vim.fn.fnamemodify(debug.getinfo(1, "S").source:sub(2), ":p"))))
+
 --- 現在のタブの作業ディレクトリ
 ---@return string
 function M.cwd()

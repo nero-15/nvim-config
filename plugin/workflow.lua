@@ -19,6 +19,7 @@ end
 command("Check", call("verify", "run", "check"), "日常の検証 (make/pnpm check) を実行して quickfix へ")
 command("Verify", call("verify", "run"), "全体検証 (make/pnpm verify) を実行して quickfix へ")
 command("VerifyLog", call("verify", "show_log"), "直前の check / verify の実行記録・出力を開く")
+command("VerifySend", call("verify", "send_to_claude"), "直前の赤い check / verify を Claude の入力欄へ渡す")
 
 -- 外部メモリ (仕様・計画・タスク)
 command("Spec", call("spec", "pick"), "Spec Hub: 規約・引継・計画・文書を一覧")
@@ -30,7 +31,11 @@ command("SpecGrep", call("spec", "grep"), "docs/ と plans/ の中を grep")
 -- エージェントの worktree と Claude
 command("Worktrees", call("worktree", "pick"), "worktree を一覧して開く / 差分レビュー / Claude 起動")
 command("ClaudeNew", call("claude", "new"), "現在のタブの cwd で Claude を追加起動")
-command("ClaudeSessions", call("claude", "pick"), "起動中の Claude を切り替え")
+command("ClaudeSessions", call("claude", "pick"), "起動中の Claude を状態つきで一覧 / 切り替え")
+command("ClaudeNext", call("agents", "next"), "自分を待っている Claude (判断待ち → 完了・未読) へ跳ぶ")
+command("ClaudeWorktree", function(opts)
+  require("workflow.claude").new_worktree(opts.args)
+end, "新しい worktree を作り、そこで Claude を起動", { nargs = "?" })
 
 -- プレビュー
 command("Preview", call("preview", "open"), "md / html / mermaid / pdf をブラウザ等でプレビュー")

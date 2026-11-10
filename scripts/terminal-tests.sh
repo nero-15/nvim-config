@@ -7,7 +7,8 @@ TEST_DIR="$(cd "$TEST_DIR" && pwd -P)"
 trap 'rm -rf "$TEST_DIR"' EXIT
 
 # 関数本体を読み込み、実HOMEのリンクを触らずに通常setupのリンク処理を検証。
-source <(sed -n '/^link_config() {/,/^}/p' "$ROOT/setup.sh")
+# macOS標準のbash 3.2は `source <(...)` で関数を読み込めないためevalを使う。
+eval "$(sed -n '/^link_config() {/,/^}/p' "$ROOT/setup.sh")"
 mkdir -p "$TEST_DIR/source"
 link_config test "$TEST_DIR/source" "$TEST_DIR/new/config/nvim"
 [ "$(readlink "$TEST_DIR/new/config/nvim")" = "$TEST_DIR/source" ]

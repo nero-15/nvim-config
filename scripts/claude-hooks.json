@@ -1,0 +1,75 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "if [ -n \"$NVIM_AGENT_SIGNAL\" ]; then sh \"$NVIM_AGENT_SIGNAL\" SessionStart; fi",
+            "timeout": 5,
+            "async": true
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "if [ -n \"$NVIM_AGENT_SIGNAL\" ]; then sh \"$NVIM_AGENT_SIGNAL\" UserPromptSubmit; fi",
+            "timeout": 5,
+            "async": true
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "if [ -n \"$NVIM_AGENT_SIGNAL\" ]; then sh \"$NVIM_AGENT_SIGNAL\" PostToolUse; fi",
+            "timeout": 5,
+            "async": true
+          }
+        ]
+      }
+    ],
+    "Notification": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "if [ -n \"$NVIM_AGENT_SIGNAL\" ]; then sh \"$NVIM_AGENT_SIGNAL\" Notification; fi",
+            "timeout": 5,
+            "async": true
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "if [ -n \"$NVIM_AGENT_SIGNAL\" ]; then sh \"$NVIM_AGENT_SIGNAL\" Stop; fi",
+            "timeout": 5,
+            "async": true
+          }
+        ]
+      }
+    ],
+    "SessionEnd": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "if [ -n \"$NVIM_AGENT_SIGNAL\" ]; then sh \"$NVIM_AGENT_SIGNAL\" SessionEnd; fi",
+            "timeout": 5
+          }
+        ]
+      }
+    ]
+  }
+}

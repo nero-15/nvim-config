@@ -6,6 +6,7 @@
 - 継承: [DNA](../00-dna.md)、[ADR-0001](0001-docs-as-dna.md)、[ADR-0003](0003-multiplexer-strategy.md)
 - 運用の正本: [01-dev-loop.md](../01-dev-loop.md)
 - 検証の正本: [04-verification.md](../04-verification.md)
+- 更新: 版の特定方法（決定 3）は [ADR-0007](0007-agent-signals-and-tree-id.md) が tree ID に置き換えた。文書の置き場所（決定 6）は [docs の索引](../README.md) を参照する。
 
 ## 背景
 

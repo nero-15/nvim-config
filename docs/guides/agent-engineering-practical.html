@@ -22,7 +22,7 @@
   <h1>グラフで、AIの仕事を<br>どう設計するか。</h1>
   <p class="lead">用語の意味から一歩進んで、<strong>どこをAIに任せ、どこを仕組みで決めるのか</strong>を考える資料です。最近の動向と、一つの開発作業を例に、設計の中身まで説明します。</p>
   <p class="small">2026年10月28日確認 ／ 入門より詳しく、実装仕様より手前 ／ <a href="agent-engineering-beginner.html">入門版へ</a></p>
-  <p class="small"><strong>教材の時点：2026年10月28日の運用整備前。</strong>本文の提案・未実装という記述は作成時点のものです。現在は<a href="01-dev-loop.md">開発ループ</a>、<a href="04-verification.md">検証仕様</a>、<a href="tasks.md">進捗</a>を参照してください。</p>
+  <p class="small"><strong>教材の時点：2026年10月28日の運用整備前。</strong>本文の提案・未実装という記述は作成時点のものです。現在は<a href="../01-dev-loop.md">開発ループ</a>、<a href="../04-verification.md">検証仕様</a>、<a href="../tasks.md">進捗</a>を参照してください。</p>
   <nav aria-label="目次"><a href="#why">なぜ今グラフ？</a><a href="#design">何を設計する？</a><a href="#example">実際の開発で見る</a><a href="#state">状態と証拠</a><a href="#memory">記憶との違い</a><a href="#start">今の環境へ</a></nav>
   <div class="summary"><strong>中心になるのは、仕事を次へ進める条件。</strong><p>「AIを何人並べるか」に加えて、何を受け渡し、何が確認できたら先へ進み、失敗したらどこへ戻るかを決めます。</p></div>
 </header>
@@ -88,7 +88,7 @@
 <section id="example" class="section">
   <span class="section-no">04 ／ 今のプロジェクトを例にする</span>
   <h2>「不具合を直して」で、<br>どんなグラフを組むのか。</h2>
-  <div class="callout"><span class="label">題材：過去のレビューに記録された問題</span><p>プロジェクトAで検証を始め、終了前にプロジェクトBへ移動すると、AのエラーからBの同名ファイルへ飛んでしまう。</p><p class="small">2026年10月1日の<a href="review-2026-10-01.md">レビュー記録</a>を、設計の教材として使います。現在も未修正だと断定するものではありません。</p></div>
+  <div class="callout"><span class="label">題材：過去のレビューに記録された問題</span><p>プロジェクトAで検証を始め、終了前にプロジェクトBへ移動すると、AのエラーからBの同名ファイルへ飛んでしまう。</p><p class="small">2026年10月1日の<a href="../archive/review-2026-10-01.md">レビュー記録</a>を、設計の教材として使います。現在も未修正だと断定するものではありません。</p></div>
   <p>一人のAIに調査・実装・確認をすべて順番に任せる方法でも、この問題は解けます。グラフを設計する価値は、分ける意味がある作業を分けて、<strong>何が完了したかを明確にする</strong>ことにあります。以下は、この仕事への構成案です。</p>
   <figure>
     <div class="node center blue"><strong>① 完成条件を決める</strong><small>移動しても、検証を始めたAのファイルへ飛ぶ</small></div>
@@ -186,7 +186,7 @@
 
 <footer>
   <p>この資料は、調査報告の内容を実務の設計判断ができる粒度へ再構成したものです。最新動向の主要3資料は2026年10月28日に再確認。図の開発フロー・導入順はこの環境向けの提案であり、実装済み・効果実証済みとは扱いません。</p>
-  <p><a href="agent-engineering-beginner.html">用語から読む入門版</a> ／ <a href="research-2026-10-27-agent-engineering.md">根拠・投稿検証を含む詳細調査</a> ／ <a href="00-dna.md">現プロジェクトの開発方針</a></p>
+  <p><a href="agent-engineering-beginner.html">用語から読む入門版</a> ／ <a href="../archive/research-2026-10-27-agent-engineering.md">根拠・投稿検証を含む詳細調査</a> ／ <a href="../00-dna.md">現プロジェクトの開発方針</a></p>
   <p>本文と図はオフラインで読めます。補足は「もう一段深く」などの項目を開くと読めます。</p>
 </footer>
 </main>

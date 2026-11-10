@@ -24,6 +24,10 @@ export NVIM_LOG_FILE="$VERIFY_DIR/nvim.log"
 STARTUP_BUDGET_MS=80
 FAILED=0
 
+# 検証した版 (R-15)。HEAD は未コミット変更を区別しないため、作業木の内容を tree ID で記録する。
+tree_id() { sh "$ROOT/scripts/tree-id.sh" "$ROOT" 2>/dev/null; }
+TREE_BEFORE=$(tree_id)
+
 pass() { echo "  ✓ $1"; }
 fail() { echo "  ✗ $1"; FAILED=1; }
 
@@ -97,7 +101,20 @@ code=$?
 echo "$out" | sed 's/^/  /'
 [ "$code" -eq 0 ] && pass "V-10 実行グラフの境界" || fail "V-10 実行グラフの境界"
 
+# 証拠: どの内容を検証したか。開始時と終了時で内容が同じときだけ green を記録する。
+TREE_AFTER=$(tree_id)
+STAMP=${NVIM_VERIFY_STAMP_FILE:-$(git rev-parse --git-path nvim-verify-stamp 2>/dev/null)}
 echo ""
+if [ -z "$TREE_BEFORE" ] || [ -z "$TREE_AFTER" ]; then
+  echo "tree: 取得なし（git リポジトリ外、または git が無い）"
+elif [ "$TREE_BEFORE" != "$TREE_AFTER" ]; then
+  echo "tree: 検証中に作業木が変わりました ($TREE_BEFORE → $TREE_AFTER)。この結果は一つの版の証拠になりません。再実行してください"
+else
+  echo "tree: $TREE_AFTER (HEAD $(git rev-parse --short HEAD 2>/dev/null || echo none), 未コミット $(git status --porcelain 2>/dev/null | wc -l | tr -d ' ') 件)"
+  if [ $FAILED -eq 0 ] && [ -n "$STAMP" ] && [ "${NVIM_VERIFY_STAMP:-1}" != 0 ]; then
+    printf 'tree=%s\nhead=%s\nat=%s\n' "$TREE_AFTER" "$(git rev-parse HEAD 2>/dev/null)" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" > "$STAMP"
+  fi
+fi
 if [ $FAILED -eq 0 ]; then
   echo "green ✓"
 else

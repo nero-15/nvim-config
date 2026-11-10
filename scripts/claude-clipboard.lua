@@ -64,14 +64,16 @@ local function check(cmd, tmux)
   assert(#copies == 1 and copies[1] == text, "clipboard text was not preserved")
   assert(not screen:find("52;c;", 1, true) and not screen:find(encoded:sub(1, 32), 1, true),
     "clipboard control sequence / Base64 leaked into terminal display")
+  -- 状態通知の hook (R-14) は --settings で足す。resume 引数はその後ろに残る。
   assert(vim.deep_equal(vim.fn.readfile(dir .. "/args"), {
-    "--dangerously-skip-permissions", "--resume", "session with spaces",
-  }), "CLI arguments changed")
+    "--dangerously-skip-permissions", "--settings", root .. "/scripts/claude-hooks.json",
+    "--resume", "session with spaces",
+  }), "CLI arguments changed: " .. vim.inspect(vim.fn.readfile(dir .. "/args")))
   assert(table.concat(vim.fn.readfile(dir .. "/ide")) == "12345", "IDE environment was lost")
 end
 
 local ok, err = pcall(function()
-  for _, cmd in ipairs({ require("plugins.ai")[1].opts.terminal_cmd, require("workflow.claude").cmd }) do
+  for _, cmd in ipairs({ require("plugins.ai")[1].opts.terminal_cmd, require("workflow.claude").command(2) }) do
     check(cmd, "/tmp/clipboard-fixture,123,0")
     check(cmd, "")
   end

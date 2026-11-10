@@ -1,6 +1,6 @@
 -- R-06: real asynchronous verification keeps its origin and complete lines.
 -- Run: nvim --clean --headless -l scripts/workflow-verify.lua
-local repo = vim.fs.dirname(vim.fs.dirname(debug.getinfo(1, 'S').source:sub(2)))
+local repo = vim.fs.dirname(vim.fs.dirname(vim.fn.fnamemodify(debug.getinfo(1, 'S').source:sub(2), ':p')))
 vim.opt.runtimepath:prepend(repo)
 local verify = require('workflow.verify')
 local original_cwd = vim.fn.getcwd()
@@ -125,6 +125,61 @@ local ok, err = xpcall(function()
   eq(context.finished_head, second)
   assert(not table.concat(notifications, '\n'):find('green ✓', 1, true), 'changed HEAD reported green')
 
+  -- R-15: the tree ID identifies uncommitted content. An edit during the run is not green.
+  write(a .. '/scripts/verify.sh', { 'exit 0' })
+  notifications = {}
+  verify.run()
+  wait_done()
+  context = vim.fn.getqflist({ context = 1 }).context
+  assert(context.started_tree and context.started_tree:match('^%x+$'), 'missing tree id: ' .. vim.inspect(context))
+  eq(context.finished_tree, context.started_tree)
+  assert(table.concat(notifications, '\n'):find('green ✓', 1, true), 'stable tree was not green')
+  local stable = context.started_tree
+  assert(context.log_path and vim.uv.fs_stat(context.log_path), 'log file was not saved')
+  local saved = table.concat(vim.fn.readfile(context.log_path), '\n')
+  assert(saved:find('tree (finish): ' .. stable, 1, true) and saved:find('exit: 0', 1, true), saved)
+  assert(not vim.startswith(context.log_path, a), 'log must not dirty the project tree')
+  write(a .. '/scripts/verify.sh', { "printf 'edited during verify' > src/main.go" })
+  notifications = {}
+  verify.run()
+  wait_done()
+  context = vim.fn.getqflist({ context = 1 }).context
+  assert(context.started_tree ~= stable, 'changing the verify script must change the tree id')
+  assert(context.finished_tree ~= context.started_tree, 'uncommitted edit during the run was not detected')
+  eq(context.started_head, context.finished_head)
+  assert(not table.concat(notifications, '\n'):find('green ✓', 1, true), 'changed content reported green')
+
+  -- A red result can be handed to Claude: inserted, not submitted, pointing at the saved log.
+  local sent = {}
+  package.loaded['claudecode.terminal'] = {
+    get_active_terminal_bufnr = function() return 1 end,
+    send_to_terminal = function(text, opts) sent[#sent + 1] = { text = text, opts = opts }; return true end,
+  }
+  notifications = {}
+  verify.send_to_claude()
+  eq(#sent, 0)
+  assert(table.concat(notifications, '\n'):find('exit 0', 1, true), 'green result should explain there is nothing to send')
+  write(a .. '/scripts/verify.sh', { "echo 'src/main.go:1:1: boom'", 'exit 3' })
+  notifications = {}
+  verify.run()
+  wait_done()
+  vim.cmd('silent! cclose')
+  context = vim.fn.getqflist({ context = 1 }).context
+  verify.send_to_claude()
+  eq(#sent, 1)
+  eq(sent[1].opts.submit, false)
+  for _, part in ipairs({ 'exit 3', '@' .. context.log_path, 'bash scripts/verify.sh', a }) do
+    assert(sent[1].text:find(part, 1, true), 'prompt lacks ' .. part .. ': ' .. sent[1].text)
+  end
+  assert(not sent[1].text:find('\n', 1, true), 'prompt must stay on one line')
+  assert(table.concat(vim.fn.readfile(context.log_path), '\n'):find('src/main.go:1:1: boom', 1, true), 'log lacks output')
+  package.loaded['claudecode.terminal'].get_active_terminal_bufnr = function() return nil end
+  notifications = {}
+  verify.send_to_claude()
+  eq(#sent, 1)
+  assert(table.concat(notifications, '\n'):find('起動していません', 1, true), 'missing Claude was not explained')
+  package.loaded['claudecode.terminal'] = nil
+
   -- Daily check uses its own command and cannot overlap or stand in for verify.
   write(a .. '/scripts/check.sh', { 'sleep 0.15', 'printf checked > checked' })
   write(a .. '/scripts/verify.sh', { 'printf verified > verified' })
@@ -157,5 +212,5 @@ vim.cmd('silent! only!')
 vim.cmd.cd(vim.fn.fnameescape(original_cwd))
 vim.fn.delete(temp, 'rf')
 if not ok then io.stderr:write(err .. '\n'); vim.cmd('cq!') end
-io.write('workflow check/verify: modes, guard, origin, streams, metadata, save failure, logs passed\n')
+io.write('workflow check/verify: modes, guard, origin, streams, metadata, tree evidence, hand-off, save failure, logs passed\n')
 vim.cmd('qa!')

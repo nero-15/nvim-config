@@ -1,3 +1,5 @@
 .DS_Store
 # :helptags が生成する（起動時に自動再生成）
 doc/tags
+# 並走エージェントの worktree（claude --worktree / <Space>aW）
+.claude/worktrees/

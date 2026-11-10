@@ -28,13 +28,13 @@ flowchart TD
 ├── docs/                   # DNA・運用・要求・ADR（設定として自動実行しない）
 ├── .claude/agents/          # Claude CodeのMaker/Checker定義
 ├── .claude/workflows/       # 保存した読み取り監査
-├── .claude/settings.json    # Claude Codeのhook設定
+├── .claude/settings.json    # このリポジトリのhook（開始時の文脈・Stopゲート）と許可
 ├── init.lua
 ├── lua/config/             # options / keymaps / autocmds / parsers / indent
 ├── lua/plugins/            # lazy.nvim のプラグイン定義（ドメインごと。下表）
-├── lua/workflow/           # 独自コマンドの実装（verify / worktree / spec / claude / preview / lesson / tabline）
-├── scripts/                # verify・回帰検査・役割guard・文書リンク検査
-├── Makefile                # check / verify / doc-links-check の入口
+├── lua/workflow/           # 独自コマンドの実装（verify / worktree / spec / claude / agents / preview / lesson / tabline）
+├── scripts/                # verify・回帰検査・役割guard・版ID・Claudeのhook・文書リンク検査
+├── Makefile                # check / verify / tree-id / doc-links-check の入口
 ├── ghostty/config          # Ghostty の設定（setup.sh がリンク）
 │
 │   ── 以下は Neovim が特別に読む runtimepath ディレクトリ ──
@@ -52,14 +52,14 @@ flowchart TD
 
 | ファイル | ドメイン | 要求 |
 |----------|----------|------|
-| `ui.lua` | テーマ・ステータスライン（worktree 名）・アイコン | — |
+| `ui.lua` | テーマ・ステータスライン（worktree 名・Claude の状態）・アイコン | R-14 |
 | `snacks.lua` | ピッカー・エクスプローラー・ダッシュボード・画像・通知・切り替え | R-01, R-02, R-05 |
 | `whichkey.lua` | Leader グループの地図 | R-11 |
 | `navigation.lua` | oil・flash・harpoon・セッション・servery | R-10, R-12 |
 | `coding.lua` | 補完・テキストオブジェクト・編集の増幅 | R-12 |
 | `lsp.lua` / `treesitter.lua` / `formatting.lua` / `linting.lua` | 言語サポート | — |
 | `git.lua` | hunk・差分レビュー・worktree | R-05, R-07 |
-| `ai.lua` | Claude Code | R-09 |
+| `ai.lua` | Claude Code | R-09, R-14 |
 | `markdown.lua` | 整形表示・ブラウザプレビュー | R-01〜R-03 |
 | `spec.lua` / `quickfix.lua` | 外部メモリ・停止条件・一括置換 | R-04, R-06 |
 | `learning.lua` | hardtime・precognition・チートシート | R-11 |
@@ -68,21 +68,48 @@ flowchart TD
 
 | コマンド | 実装 | 要求 |
 |----------|------|------|
-| `:Check` `:Verify` `:VerifyLog` | `verify.lua` | R-06 |
+| `:Check` `:Verify` `:VerifyLog` `:VerifySend` | `verify.lua` | R-06, R-15 |
 | `:Spec` `:Tasks` `:Plans` `:Adr` `:SpecGrep` | `spec.lua` | R-04 |
 | `:Worktrees` | `worktree.lua` | R-05, R-07 |
-| `:ClaudeNew` `:ClaudeSessions` | `claude.lua` | R-09 |
+| `:ClaudeNew` `:ClaudeWorktree` `:ClaudeSessions` | `claude.lua` | R-09, R-14 |
+| `:ClaudeNext`（状態の集約・表示・移動） | `agents.lua` | R-14 |
 | `:Preview` `:PreviewStop` | `preview.lua` | R-02, R-03 |
 | `:Lesson` | `lesson.lua` | R-11 |
-| （タブライン） | `tabline.lua` | R-05 |
+| （タブライン） | `tabline.lua` | R-05, R-14 |
 
 プロジェクト操作は現在のタブのcwdからrootを解決する（`project.lua`）。worktreeごとにタブを分けると、検証や仕様検索の対象も切り替わる。`Preview`は現在のバッファ、`VerifyLog`は直前に実行したCheck/Verifyの記録を対象にし、表示時のcwdへ付け替えない。Lessonは設定リポジトリの教材を扱う。
 
-### 実行グラフと検証の接続
+### エージェントとの接続
 
-運用ルールの正本は [01-dev-loop.md](01-dev-loop.md)、検査の内容は [04-verification.md](04-verification.md)。Claude Codeの役割定義・hook・監査workflowは `.claude/`、guardの実装と回帰検査は `scripts/` に分ける。CodexではClaude Code用の権限制限やhookは自動適用されない。
+決まりの正本は [01-dev-loop.md](01-dev-loop.md)、検査の内容は [04-verification.md](04-verification.md)、使い方は [06-operations.md](06-operations.md)。ここでは「どのファイルが何をつなぐか」だけを示す。
 
-`verify.lua`はCheck/Verifyの明示定義を選び、root・mode・コマンド・開始終了時刻/HEAD・終了コードを保持する。両モードは同時には実行せず、ログは共用のscratch bufferに表示する。永続的な監査ログではないため、引き継ぎに必要な証拠は成果物とともに別途記録する。
+```mermaid
+flowchart LR
+  subgraph Neovim
+    C[claude.lua<br/>起動コマンド] --> A[agents.lua<br/>状態・表示・移動]
+    V[verify.lua<br/>Check / Verify]
+  end
+  C -- "--settings claude-hooks.json" --> H[Claude Code]
+  H -- "hook: agent-signal.sh<br/>nvim --server $NVIM" --> A
+  V -- "tree-id.sh<br/>開始時・終了時" --> T[(tree ID)]
+  V -- "赤いログの場所<br/>Space av" --> H
+  S[.claude/settings.json] -- "agent-gate.sh<br/>start / stop" --> H
+  M[make check<br/>verify.sh] -- "green のとき" --> ST[(.git/nvim-verify-stamp)]
+  ST --> S
+```
+
+| ファイル | 役割 |
+|---|---|
+| `scripts/tree-id.sh` | 作業木の内容の ID。`make tree-id`、`verify.sh`、`verify.lua`、`agent-gate.sh` が使う |
+| `scripts/verify.sh` | 停止条件。green で検証中に内容が変わらなかったときだけ `.git/nvim-verify-stamp` を書く |
+| `scripts/agent-gate.sh` | このリポジトリの SessionStart / Stop hook。開始時の基準は worktree ごとの `.git/…/nvim-sessions/` |
+| `scripts/claude-hooks.json` | Neovim から起動した Claude にだけ足す hook 定義（`--settings`） |
+| `scripts/agent-signal.sh` | hook の入力を親 Neovim（`$NVIM`）の `agents.signal()` へ渡す。常に無出力・exit 0 |
+| `scripts/role-guard.sh` / `.mjs` | Maker / Checker の PreToolUse ガード |
+
+`claude.lua` は同梱スクリプトを `stdpath("config")` ではなく読み込まれた Lua と同じチェックアウトから解決する（`project.CONFIG`）。worktree の設定を検証しても、別の版のスクリプトを取り違えない。
+
+`verify.lua` は Check / Verify の明示定義を選び、root・mode・コマンド・開始終了時刻・HEAD・tree ID・終了コードを保持する。両モードは同時には実行しない。記録は scratch buffer に表示し、同じ内容を `stdpath("state")/verify/` に保存する（プロジェクトと mode ごとに直前の 1 件）。引き継ぎに必要な証拠は、成果物とともに別途記録する。
 
 ### 特殊ディレクトリの使い分け
 

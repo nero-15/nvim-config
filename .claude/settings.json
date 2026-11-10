@@ -1,0 +1,35 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(make check)",
+      "Bash(make verify)",
+      "Bash(make tree-id)",
+      "Bash(make doc-links-check)",
+      "Bash(node scripts/graph-tests.mjs)"
+    ]
+  },
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh \"$CLAUDE_PROJECT_DIR/scripts/agent-gate.sh\" start",
+            "timeout": 20
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh \"$CLAUDE_PROJECT_DIR/scripts/agent-gate.sh\" stop",
+            "timeout": 20
+          }
+        ]
+      }
+    ]
+  }
+}

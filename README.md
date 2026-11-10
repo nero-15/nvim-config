@@ -52,11 +52,16 @@ flowchart LR
 | `:Worktrees` | `<Space>gw` | worktree を新しいタブで開く / 差分レビュー / そこで Claude |
 | `:Check` | `<Space>vc` | プロジェクトが明示した日常検証（`make check` / `pnpm check`等） |
 | `:Verify` | `<Space>vv` | `make verify` / `pnpm verify` を実行 → quickfix |
-| `:VerifyLog` | `<Space>vl` | 実行元・HEAD・時刻・終了コード・全出力を確認 |
+| `:VerifyLog` | `<Space>vl` | 実行元・HEAD・tree ID・時刻・終了コード・全出力を確認 |
+| `:VerifySend` | `<Space>av` | 赤い結果のログと指示を Claude の入力欄へ入れる |
 | `:ClaudeNew` | `<Space>an` | Claude を追加で起動（並走） |
+| `:ClaudeWorktree` | `<Space>aW` | 新しい worktree を作り、そこで Claude を起動 |
+| `:ClaudeNext` | `<Space>aw` | 自分を待っている Claude（判断待ち → 完了・未読）へ移動 |
+| `:ClaudeSessions` | `<Space>al` | 起動中の Claude を状態つきで一覧 |
 | `:Preview` | `<Space>mp` | Markdown / Mermaid / HTML をブラウザでプレビュー |
 
 日々の反復は `:Check`、全体の確認は `:Verify`。未定義なら通知し、別の検証へ暗黙に切り替えない。このリポジトリは検証が短いため、`make check` と `make verify` は同じ検査を行う。
+並走する Claude の状態はステータスラインに出る（`!` 判断待ち / `✓` 完了・未読 / `▶` 作業中）。使い方は [運用ガイド](docs/06-operations.md)。
 作業の依存・担当・差し戻しは [実行グラフの運用](docs/01-dev-loop.md)、検査範囲は [検証の正本](docs/04-verification.md) を参照。役割と保存した監査も `:Spec` から開ける。
 
 ## シェルコマンド
@@ -75,7 +80,8 @@ flowchart LR
 ```
 .
 ├── CLAUDE.md / AGENTS.md   エージェント向けの入口
-├── docs/                   DNA・要求・構成・検証・ADR・引き継ぎ（Neovim は読まない）
+├── docs/                   DNA・運用・要求・構成・検証・ADR・引き継ぎ（Neovim は読まない。索引は docs/README.md）
+├── .claude/                役割定義・監査 workflow・このリポジトリの hook
 ├── lessons/                レッスンの原本（:Lesson が自分用にコピーして開く）
 ├── init.lua
 ├── lua/config/             options / keymaps / autocmds / parsers
@@ -87,7 +93,7 @@ flowchart LR
 ├── ftdetect/               ファイルの種類の判定      │ ディレクトリ
 ├── snippets/               仕様・ADR・Mermaid の雛形 │
 ├── doc/                    :help nvim-config         ┘
-├── scripts/                verify.sh（停止条件）/ smoke.lua
+├── scripts/                verify.sh（停止条件）/ 回帰検査 / tree-id.sh（版 ID）/ Claude の hook
 ├── ghostty/config · tmux.conf · aliases.sh · setup.sh
 └── lazy-lock.json
 ```
@@ -100,7 +106,7 @@ flowchart LR
 
 1. 要求を [docs/02-requirements.md](docs/02-requirements.md) に書く
 2. 実装する（Claude に任せてよい）
-3. `bash scripts/verify.sh`（Neovim 内なら `<Space>vv`）が green になったら完了
+3. `make check`（Neovim 内なら `<Space>vc`）が green になったら完了。出力末尾の `tree:` 行が検証した内容を示す
 4. プラグインの入れ替えなどの判断は [docs/adr/](docs/adr/) に残し、[docs/tasks.md](docs/tasks.md) を更新する
 
 ### プラグインの更新
